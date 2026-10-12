@@ -10,6 +10,7 @@ from ghosthand.reader import render, walk
 from ghosthand.refs import RefTable
 
 SETTLE = 0.15
+SETTLE_LIMIT = 1.5
 POLL = 0.25
 
 
@@ -89,15 +90,32 @@ class Desktop:
     def wait_for(self, window: str | int, text: str, gone: bool = False, timeout: float = 10.0) -> str:
         hwnd = self.resolve(window)
         needle = text.lower()
+
+        def holds(snapshot: Snapshot) -> bool:
+            return any(needle in f"{node.info.name} {node.info.value or ''}".lower() for node in snapshot.nodes) != gone
+
         deadline = self.clock() + timeout
         while True:
             snapshot = self.snapshot(hwnd)
-            present = any(needle in f"{node.info.name} {node.info.value or ''}".lower() for node in snapshot.nodes)
-            if present != gone:
-                return render(snapshot)
+            if holds(snapshot):
+                return render(self._settled(hwnd, snapshot, holds))
             if self.clock() >= deadline:
                 raise GhostError(f'timed out after {timeout:g}s waiting for "{text}" to {"disappear" if gone else "appear"}')
             self.sleep(POLL)
+
+    def _settled(self, hwnd: int, snapshot: Snapshot, holds: Callable[[Snapshot], bool]) -> Snapshot:
+        # A page that is still animating in hands out refs whose elements are about to move or be
+        # re-wrapped, so wait until the usable elements stay put between two reads.
+        deadline = self.clock() + SETTLE_LIMIT
+        while self.clock() < deadline:
+            self.sleep(SETTLE)
+            again = self.snapshot(hwnd)
+            if not holds(again):
+                return snapshot
+            if _layout(again) == _layout(snapshot):
+                return again
+            snapshot = again
+        return snapshot
 
     def launch(self, target: str, args: Sequence[str] = (), timeout: float = 20.0) -> str:
         before = {row.hwnd for row in self.win.list_windows()}
@@ -148,3 +166,7 @@ class Desktop:
         if not self.win.is_window(hwnd):
             return f"{headline}; the window closed"
         return f"{headline}\n{render(self.snapshot(hwnd))}"
+
+
+def _layout(snapshot: Snapshot) -> list[tuple]:
+    return [(node.key, node.info.rect) for node in snapshot.nodes if node.info.actions]

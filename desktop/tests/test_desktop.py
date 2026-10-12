@@ -120,6 +120,29 @@ def test_stale_ref_is_not_moved_when_two_lookalikes_could_be_it():
     assert back.performed == [] and twin.performed == []
 
 
+def test_ref_moves_to_an_element_seen_before_but_never_alongside_it():
+    desk, window, wrapper, back = flutter_detail_page()
+    wrapper.data = replace(wrapper.data, role="group", name="")
+    settled = back_ref(desk.read("kazumi"))
+    wrapper.data = replace(wrapper.data, role="image", name="开始观看")
+    animating = back_ref(desk.read("kazumi"))
+    wrapper.data = replace(wrapper.data, role="group", name="")
+    assert animating != settled
+    out = desk.act(animating)
+    assert back.performed == ["press"] and out.startswith(f"press {animating}: done")
+
+
+def test_stale_ref_is_not_moved_to_an_element_that_was_on_screen_with_it():
+    desk, window, wrapper, back = flutter_detail_page()
+    neighbour = FakeElement("button", actions=("press",), rect=(225, 30, 282, 86))
+    window.add(FakeElement("pane").add(neighbour))
+    ref = back_ref(desk.read("kazumi"))
+    window.children.remove(wrapper)
+    with pytest.raises(GhostError, match=f"stale: {ref}"):
+        desk.act(ref)
+    assert neighbour.performed == []
+
+
 def test_act_without_a_mouse_free_action_never_performs():
     desk, win, save, field, canvas, editor = setup()
     with pytest.raises(GhostError, match="needs a real click"):
@@ -209,6 +232,44 @@ def test_wait_for_something_to_disappear():
     desk, win, save, field, canvas, editor = setup()
     desk.sleep = lambda seconds: editor.children.remove(canvas) if canvas in editor.children else None
     assert '"Canvas"' not in desk.wait_for("notepad", "Canvas", gone=True)
+
+
+def test_wait_for_returns_the_page_once_it_stops_moving():
+    desk, window, wrapper, back = flutter_detail_page()
+    window.add(FakeElement("text", "更多操作"))
+    back.data = replace(back.data, rect=(328, 120, 384, 176))
+    heights = iter([99, 70, 45, 40])
+
+    def slide(seconds):
+        y = next(heights, 40)
+        back.data = replace(back.data, rect=(328, y, 384, y + 56))
+
+    desk.sleep = slide
+    assert "button @328,40" in desk.wait_for("kazumi", "更多操作")
+
+
+def test_wait_for_gives_up_waiting_for_a_restless_page():
+    desk, window, wrapper, back = flutter_detail_page()
+    window.add(FakeElement("text", "更多操作"))
+    now = [0.0]
+
+    def jiggle(seconds):
+        now[0] += seconds
+        y = int(now[0] * 100) % 50
+        back.data = replace(back.data, rect=(328, y, 384, y + 56))
+
+    desk.clock = lambda: now[0]
+    desk.sleep = jiggle
+    assert "更多操作" in desk.wait_for("kazumi", "更多操作")
+    assert now[0] <= 2.0
+
+
+def test_wait_for_keeps_the_moment_the_text_was_there():
+    desk, window, wrapper, back = flutter_detail_page()
+    toast = FakeElement("text", "Saved")
+    window.add(toast)
+    desk.sleep = lambda seconds: toast in window.children and window.children.remove(toast)
+    assert '"Saved"' in desk.wait_for("kazumi", "Saved")
 
 
 def test_launch_returns_the_new_window_and_hands_focus_back():

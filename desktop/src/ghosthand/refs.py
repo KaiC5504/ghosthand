@@ -3,6 +3,7 @@ from __future__ import annotations
 from ghosthand.model import ElementInfo, Node, Snapshot
 
 NEAR = 8
+KEEP_READS = 64
 
 
 def identity(node: Node) -> tuple:
@@ -21,10 +22,13 @@ class RefTable:
         self._by_key: dict[tuple, str] = {}
         self._window: dict[str, int] = {}
         self._seen: dict[str, ElementInfo] = {}
-        self._new: set[str] = set()
+        self._read_of: dict[str, int] = {}
+        self._reads: dict[int, set[str]] = {}
+        self._count = 0
 
     def assign(self, snapshot: Snapshot) -> None:
-        self._new = set()
+        self._count += 1
+        present: set[str] = set()
         # Reading order puts parents first, so a parent's key exists before its children need it.
         for node in snapshot.nodes:
             node.key = identity(node)
@@ -34,22 +38,27 @@ class RefTable:
                 ref = f"e{len(self._by_key) + 1}"
                 self._by_key[full_key] = ref
                 self._window[ref] = snapshot.hwnd
-                self._new.add(ref)
             node.ref = ref
             self._seen[ref] = node.info
+            self._read_of[ref] = self._count
+            present.add(ref)
+        self._reads[self._count] = present
+        self._reads.pop(self._count - KEEP_READS, None)
 
     def rebind(self, snapshot: Snapshot, ref: str) -> Node | None:
         """Gives a ref back to its element when only the element's ancestors changed.
 
-        Flutter rebuilds the wrappers above a page while it animates in. Only an element first seen
-        in this read, alike in its own properties, at the same place, and the only such one counts.
+        Flutter rebuilds the wrappers above a page while it animates in. Only an element that was
+        never on screen together with the old one, alike in its own properties, at the same place,
+        and the only such one counts.
         """
         last = self._seen.get(ref)
-        if last is None or last.runtime_id:
+        together = self._reads.get(self._read_of.get(ref, 0))
+        if last is None or last.runtime_id or together is None:
             return None
         matches = [
             node for node in snapshot.nodes
-            if node.ref in self._new
+            if node.ref not in together
             and node.info.runtime_id is None
             and (node.info.role, node.info.name, node.info.automation_id) == (last.role, last.name, last.automation_id)
             and abs(node.info.rect[0] - last.rect[0]) <= NEAR
@@ -58,11 +67,11 @@ class RefTable:
         if len(matches) != 1:
             return None
         node = matches[0]
-        self._new.discard(node.ref)
-        self._window.pop(node.ref, None)
         self._by_key[(snapshot.hwnd, node.key)] = ref
+        self._reads[self._count].add(ref)
         node.ref = ref
         self._seen[ref] = node.info
+        self._read_of[ref] = self._count
         return node
 
     def window_of(self, ref: str) -> int | None:
