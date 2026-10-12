@@ -183,3 +183,33 @@ def test_closing_a_window_through_its_own_button(desk):
         out = desk.act(refs(text, r'^e\d+ button "Close Calculator"')[0])
     assert out.endswith("; the window closed")
     mouse.assert_untouched()
+
+
+FORM = (
+    "Add-Type -AssemblyName System.Windows.Forms; $f = New-Object System.Windows.Forms.Form; "
+    "$f.Text = 'ghosthand keys test'; $t = New-Object System.Windows.Forms.TextBox; $f.Controls.Add($t); "
+    "$f.Add_Shown({ $t.Focus() }); [System.Windows.Forms.Application]::Run($f)"
+)
+
+
+@pytest.fixture
+def classic_form(desk):
+    process = subprocess.Popen(["powershell", "-NoProfile", "-Command", FORM])
+    hwnd = None
+    for _ in range(60):
+        time.sleep(0.25)
+        hwnd = next((row.hwnd for row in desk.win.list_windows() if row.title == "ghosthand keys test"), None)
+        if hwnd:
+            break
+    assert hwnd, "test form did not open"
+    time.sleep(0.5)
+    yield hwnd
+    ctypes.windll.user32.PostMessageW(hwnd, 0x0010, 0, 0)
+    process.wait(10)
+
+
+def test_background_keys_reach_the_focused_control_of_a_classic_window(desk, classic_form):
+    with MouseWatch() as mouse:
+        out = desk.keys(classic_form, "g h 7")
+    assert re.search(r'edit\b.*= "gh7"', out), out
+    mouse.assert_untouched()

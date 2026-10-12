@@ -33,6 +33,8 @@ user32.SetForegroundWindow.argtypes = [wintypes.HWND]
 user32.BringWindowToTop.argtypes = [wintypes.HWND]
 user32.AttachThreadInput.argtypes = [wintypes.DWORD, wintypes.DWORD, wintypes.BOOL]
 user32.PostMessageW.argtypes = [wintypes.HWND, wintypes.UINT, wintypes.WPARAM, wintypes.LPARAM]
+user32.GetGUIThreadInfo.argtypes = [wintypes.DWORD, ctypes.c_void_p]
+user32.IsChild.argtypes = [wintypes.HWND, wintypes.HWND]
 user32.MapVirtualKeyW.argtypes = [wintypes.UINT, wintypes.UINT]
 user32.MapVirtualKeyW.restype = wintypes.UINT
 user32.SendInput.argtypes = [wintypes.UINT, ctypes.c_void_p, ctypes.c_int]
@@ -83,6 +85,14 @@ class INPUT(ctypes.Structure):
     _fields_ = [("type", wintypes.DWORD), ("u", _InputUnion)]
 
 
+class GUITHREADINFO(ctypes.Structure):
+    _fields_ = [
+        ("cbSize", wintypes.DWORD), ("flags", wintypes.DWORD), ("hwndActive", wintypes.HWND), ("hwndFocus", wintypes.HWND),
+        ("hwndCapture", wintypes.HWND), ("hwndMenuOwner", wintypes.HWND), ("hwndMoveSize", wintypes.HWND), ("hwndCaret", wintypes.HWND),
+        ("rcCaret", wintypes.RECT),
+    ]
+
+
 class BITMAPINFOHEADER(ctypes.Structure):
     _fields_ = [
         ("biSize", wintypes.DWORD), ("biWidth", wintypes.LONG), ("biHeight", wintypes.LONG), ("biPlanes", wintypes.WORD),
@@ -122,6 +132,16 @@ def _cloaked(hwnd: int) -> bool:
     value = wintypes.DWORD()
     dwmapi.DwmGetWindowAttribute(hwnd, DWMWA_CLOAKED, ctypes.byref(value), ctypes.sizeof(value))
     return value.value != 0
+
+
+def _focused_child(hwnd: int) -> int:
+    # Classic windows (dialogs, forms, installers) do not pass keys from the frame on to the
+    # control that has focus, so keys go to the window's own focused child when it has one.
+    info = GUITHREADINFO(cbSize=ctypes.sizeof(GUITHREADINFO))
+    thread = user32.GetWindowThreadProcessId(hwnd, None)
+    if thread and user32.GetGUIThreadInfo(thread, ctypes.byref(info)) and info.hwndFocus and user32.IsChild(hwnd, info.hwndFocus):
+        return info.hwndFocus
+    return hwnd
 
 
 class Win32:
@@ -171,10 +191,11 @@ class Win32:
         return self.foreground() == hwnd
 
     def post_keys(self, hwnd: int, strokes: list[KeyStroke]) -> None:
+        target = _focused_child(hwnd)
         for stroke in strokes:
             scan = user32.MapVirtualKeyW(stroke.vk, 0)
-            user32.PostMessageW(hwnd, WM_KEYDOWN, stroke.vk, key_lparam(scan, stroke.extended, up=False))
-            user32.PostMessageW(hwnd, WM_KEYUP, stroke.vk, key_lparam(scan, stroke.extended, up=True))
+            user32.PostMessageW(target, WM_KEYDOWN, stroke.vk, key_lparam(scan, stroke.extended, up=False))
+            user32.PostMessageW(target, WM_KEYUP, stroke.vk, key_lparam(scan, stroke.extended, up=True))
 
     def send_keys_focused(self, hwnd: int, strokes: list[KeyStroke]) -> None:
         if not self.set_foreground(hwnd):
