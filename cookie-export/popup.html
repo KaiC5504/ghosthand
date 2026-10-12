@@ -1,0 +1,19 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      body { font: 13px system-ui, sans-serif; width: 300px; margin: 12px; }
+      input { width: 100%; box-sizing: border-box; padding: 6px; }
+      button { margin-top: 8px; padding: 6px 12px; }
+      #status { margin-top: 8px; white-space: pre-wrap; }
+    </style>
+  </head>
+  <body>
+    <label for="sites">Sites (space or comma separated)</label>
+    <input id="sites" value="bilibili.com" />
+    <button id="export">Export cookies</button>
+    <div id="status"></div>
+    <script type="module" src="popup.js"></script>
+  </body>
+</html>
