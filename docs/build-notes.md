@@ -27,8 +27,8 @@ ghosthand must do; this file says where the build ended up and why.
    `node summarize.mjs results/2026-10-12 out`.
 4. **Optional**: delete old plugin copies in `~/.claude/plugins/cache/ghosthand/ghosthand/` (0.1.0
    now, older versions later) once no Claude session is using them.
-5. **Your call**: your global CLAUDE.md still says "Orca first". Change it if you want Claude to
-   reach for ghosthand instead.
+5. Done 2026-10-13: the global CLAUDE.md now says "ghosthand first" (old version backed up at
+   `~/.claude/CLAUDE.md.bak-2026-10-13-orca`).
 
 ## How to ship a change
 
