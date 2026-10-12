@@ -6,6 +6,7 @@ from fakes import FakeBackend, FakeElement, FakeWin, window_info
 from ghosthand.desktop import Desktop
 from ghosthand.keys import KeyStroke, parse_keys
 from ghosthand.model import GhostError
+from ghosthand.reader import MAX_NODES
 
 EDITOR, CALC, OTHER = 100, 200, 300
 
@@ -361,3 +362,14 @@ def test_stale_ref_is_not_moved_to_a_lookalike_of_another_size():
     with pytest.raises(GhostError, match=f"stale: {ref}"):
         desk.act(ref)
     assert back.performed == []
+
+
+def test_subtree_read_reaches_past_the_cap_of_a_whole_window_read():
+    sidebar = FakeElement("list", "Sidebar", rid=(3,)).add(*[FakeElement("text", f"link {i}", rid=(6, i)) for i in range(MAX_NODES - 10)])
+    feed = FakeElement("list", "Feed", rid=(4,)).add(*[FakeElement("text", f"row {i}", rid=(5, i)) for i in range(50)])
+    window = FakeElement("window", "Huge", rid=(1,)).add(sidebar, feed)
+    desk = Desktop(FakeBackend({7: window}), FakeWin(window_info(7, "Huge", "huge")), sleep=lambda seconds: None)
+    whole = desk.read("huge")
+    assert "read stopped early" in whole and '"row 49"' not in whole
+    part = desk.read("huge", ref=ref_of(whole, "Feed"))
+    assert '"row 49"' in part and "read stopped early" not in part

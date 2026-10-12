@@ -53,7 +53,23 @@ class Desktop:
         return snapshot
 
     def read(self, window: str | int, ref: str | None = None, query: str | None = None) -> str:
-        return render(self.snapshot(self.resolve(window)), query=query, subtree=ref)
+        snapshot = self.snapshot(self.resolve(window))
+        if ref:
+            node = snapshot.find(ref) or self.refs.rebind(snapshot, ref)
+            if node is None:
+                raise GhostError(f"stale: {ref} is no longer on screen. Read the window again.")
+            snapshot = self._subtree(snapshot, node)
+        return render(snapshot, query=query, subtree=ref)
+
+    def _subtree(self, snapshot: Snapshot, node: Node) -> Snapshot:
+        # A fresh walk from the element, with its own element budget, reaches what a whole-window
+        # read cut off; the top keeps its place in the tree so every ref stays the same.
+        nodes, truncated = walk(self.backend, node.handle)
+        top = nodes[0]
+        top.parent, top.sibling_index, top.info = node.parent, node.sibling_index, node.info
+        part = Snapshot(hwnd=snapshot.hwnd, title=snapshot.title, app=snapshot.app, nodes=nodes, truncated=truncated)
+        self.refs.assign(part)
+        return part
 
     def act(self, ref: str, action: str = "auto") -> str:
         snapshot, node = self._node(ref)

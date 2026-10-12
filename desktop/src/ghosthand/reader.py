@@ -109,5 +109,5 @@ def render(snapshot: Snapshot, *, query: str | None = None, subtree: str | None 
                 lines.append(line(node, depth))
             level[id(node)] = depth
     if snapshot.truncated:
-        lines.append(f"(read stopped early: over {MAX_NODES} elements or {MAX_DEPTH} levels; read a subtree ref or use query)")
+        lines.append(f"(read stopped early: over {MAX_NODES} elements or {MAX_DEPTH} levels; read again with one of the refs above to see that part in full)")
     return "\n".join(lines)

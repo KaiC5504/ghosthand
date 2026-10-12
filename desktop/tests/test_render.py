@@ -63,4 +63,4 @@ def test_unknown_subtree_ref_is_stale():
 
 def test_cut_short_read_says_so():
     window = FakeElement("window", "Huge", rid=(1,)).add(*[FakeElement("text", f"row {i}", rid=(3, i)) for i in range(MAX_NODES + 1)])
-    assert render(snapshot_of(window)).endswith("read a subtree ref or use query)")
+    assert render(snapshot_of(window)).endswith("read again with one of the refs above to see that part in full)")
