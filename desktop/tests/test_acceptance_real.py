@@ -139,15 +139,17 @@ def test_kazumi_open_a_card_and_go_back(desk):
         home = desk.wait_for("kazumi", "热门番组")
         card_row = next(row.strip() for row in home.splitlines() if re.match(r'^e\d+ image "', row.strip()))
         card, title = card_row.split()[0], card_row.split('"')[1]
-        desk.act(card)
+        opened = desk.act(card)
         detail = desk.wait_for("kazumi", "更多操作")
         unnamed = [re.match(r"^(e\d+) button @(-?\d+),(-?\d+)", row.strip()) for row in detail.splitlines()]
         back = min((match for match in unnamed if match), key=lambda match: int(match[2]) + int(match[3]))[1]
-        desk.act(back)
+        returned = desk.act(back)
         assert title in desk.wait_for("kazumi", title)
     mouse.assert_untouched()
-    # KaiC may switch windows himself meanwhile; the promise is that Kazumi does not keep the focus.
-    assert desk.win.info(desk.win.foreground()).app != "kazumi"
+    # KaiC may switch windows himself meanwhile. The promise: Kazumi does not keep the focus, or
+    # ghosthand says Windows refused to hand it back.
+    refused = "would not let ghosthand hand it back" in opened + returned
+    assert refused or desk.win.info(desk.win.foreground()).app != "kazumi"
     assert any(row.app == "kazumi" for row in desk.win.list_windows())
 
 

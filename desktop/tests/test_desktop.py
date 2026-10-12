@@ -337,3 +337,27 @@ def test_action_refused_by_a_window_that_stays_open_is_an_error():
     save.on_perform = refuse
     with pytest.raises(GhostError, match="press failed"):
         desk.act(ref_of(desk.read("notepad"), "Save"))
+
+
+def test_old_ref_from_an_earlier_page_is_not_moved_to_a_later_page():
+    desk, window, wrapper, back = flutter_detail_page()
+    ref = back_ref(desk.read("kazumi"))
+    window.children.remove(wrapper)
+    window.add(FakeElement("text", "home"))
+    desk.read("kazumi")
+    later = FakeElement("button", actions=("press",), rect=(219, 28, 276, 84))
+    window.add(FakeElement("group").add(later))
+    desk.read("kazumi")
+    with pytest.raises(GhostError, match=f"stale: {ref}"):
+        desk.act(ref)
+    assert later.performed == []
+
+
+def test_stale_ref_is_not_moved_to_a_lookalike_of_another_size():
+    desk, window, wrapper, back = flutter_detail_page()
+    ref = back_ref(desk.read("kazumi"))
+    wrapper.data = replace(wrapper.data, role="group", name="")
+    back.data = replace(back.data, rect=(219, 28, 600, 84))
+    with pytest.raises(GhostError, match=f"stale: {ref}"):
+        desk.act(ref)
+    assert back.performed == []

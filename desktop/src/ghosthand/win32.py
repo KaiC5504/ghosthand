@@ -27,6 +27,8 @@ user32.GetWindowTextW.argtypes = [wintypes.HWND, wintypes.LPWSTR, ctypes.c_int]
 user32.GetWindowThreadProcessId.argtypes = [wintypes.HWND, ctypes.POINTER(wintypes.DWORD)]
 user32.GetWindowThreadProcessId.restype = wintypes.DWORD
 user32.GetForegroundWindow.restype = wintypes.HWND
+user32.GetAncestor.argtypes = [wintypes.HWND, wintypes.UINT]
+user32.GetAncestor.restype = wintypes.HWND
 user32.SetForegroundWindow.argtypes = [wintypes.HWND]
 user32.BringWindowToTop.argtypes = [wintypes.HWND]
 user32.AttachThreadInput.argtypes = [wintypes.DWORD, wintypes.DWORD, wintypes.BOOL]
@@ -56,6 +58,7 @@ gdi32.DeleteDC.argtypes = [wintypes.HDC]
 dwmapi.DwmGetWindowAttribute.argtypes = [wintypes.HWND, wintypes.DWORD, ctypes.c_void_p, wintypes.DWORD]
 
 WM_KEYDOWN, WM_KEYUP = 0x0100, 0x0101
+GA_ROOT = 2
 DWMWA_CLOAKED = 14
 PW_RENDERFULLCONTENT = 2
 PROCESS_QUERY_LIMITED_INFORMATION = 0x1000
@@ -148,7 +151,9 @@ class Win32:
         return WindowInfo(hwnd=hwnd, title=_title(hwnd), app=_app(pid), pid=pid, front=hwnd == self.foreground())
 
     def foreground(self) -> int:
-        return user32.GetForegroundWindow() or 0
+        # After Kazumi restores itself, Windows can name its inner FLUTTERVIEW child as the foreground window.
+        hwnd = user32.GetForegroundWindow()
+        return (user32.GetAncestor(hwnd, GA_ROOT) or hwnd) if hwnd else 0
 
     def set_foreground(self, hwnd: int) -> bool:
         # Windows lets only the foreground thread move the foreground, so borrow its input
