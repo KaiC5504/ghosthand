@@ -1,0 +1,9 @@
+desktop/.venv/
+__pycache__/
+*.pyc
+node_modules/
+bench/out/
+# Logins: never commit these
+chrome-profile/
+*.storage.json
+cookies.json

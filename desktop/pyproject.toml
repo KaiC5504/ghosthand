@@ -1,0 +1,25 @@
+[project]
+name = "ghosthand"
+version = "0.1.0"
+description = "Mouse-free Windows desktop automation for Claude Code"
+requires-python = ">=3.14"
+dependencies = [
+    "comtypes==1.4.17",
+    "mcp==2.3.0",
+    "pillow==12.3.0",
+]
+
+[project.scripts]
+ghosthand = "ghosthand.server:main"
+
+[dependency-groups]
+dev = ["pytest==9.1.1"]
+
+[build-system]
+requires = ["uv_build>=0.13.0,<0.14"]
+build-backend = "uv_build"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = ["real: drives real apps on this PC; run with: uv run pytest -m real"]
+addopts = "-m \"not real\""
