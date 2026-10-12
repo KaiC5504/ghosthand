@@ -150,16 +150,19 @@ in the background.
 
 ### 4.5 Keys
 
-Keys are posted to the window (`PostMessage` `WM_KEYDOWN`/`WM_KEYUP`/`WM_CHAR`) without
-bringing it to the front. If the app ignores background keys, the result says so and Claude
-must ask KaiC before calling again with `allow_focus: true`, which brings the window forward,
-sends the keys with `SendInput`, and hands focus back.
+Keys are posted (`PostMessage` `WM_KEYDOWN`/`WM_KEYUP`) to the window's focused child control,
+or the window itself when it has none, without bringing it to the front. An app that ignores
+background keys cannot be detected from outside, so the fresh read returned with every `keys`
+call is the proof: if it shows no change, Claude must ask KaiC before calling again with
+`allow_focus: true`, which brings the window forward, sends the keys with `SendInput`, and hands
+focus back.
 
 ### 4.6 Focus guard
 
 Every action records the foreground window first. If the target app pulled itself to the
 front (Kazumi does), the server restores the previous foreground window afterwards and reports
-whether it managed to.
+whether it managed to. If a window of another app is in front instead, KaiC switched himself,
+and he stays where he went.
 
 ### 4.7 Screenshot
 
@@ -169,8 +172,10 @@ capture correctly. Only on request, only the target window, returned to Claude a
 ### 4.8 Errors
 
 Every failure is a short plain-language message plus the next step: `stale: read again`,
-`needs a real click`, `window closed: call windows`, `app ignores background keys: ask before
-allow_focus`, `timed out waiting for "…"`, `read truncated at 2000 nodes: read a subtree`.
+`needs a real click`, `window closed: call windows`, `timed out waiting for "…"`,
+`read stopped early …: read again with one of the refs above` (a subtree read walks from that
+element with its own 2000-element budget). An action whose window closes during the call is a
+success (`…; the window closed`) even when the app reports an error as it goes.
 
 ### 4.9 Speed targets
 

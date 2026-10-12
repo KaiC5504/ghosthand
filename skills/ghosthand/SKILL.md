@@ -20,6 +20,7 @@ Two MCP servers come with this plugin:
 1. `read` the window (a number from `windows`, an app name like `kazumi`, or part of a title). Lines look like `e12 button "Save" [press]`; unnamed controls show their position, e.g. `e8 button @219,27 [press]`.
 2. `act` on a ref (or `set_text` for fields). Each action returns the window's fresh state — read that instead of calling `read` again.
 3. Use `wait_for` for anything that loads or animates. Never sleep.
+   `keys` cannot tell whether the app took them: check the fresh read it returns.
 4. Confirm the outcome from the tool's own output before saying something worked.
 
 Refs stay valid while their element exists. `stale: … Read the window again` means the element changed or went away: read again and pick the new ref.
