@@ -117,8 +117,10 @@ apart, e.g. a back arrow. The available actions are listed in brackets.
 - One exception keeps a reference alive while only its ancestors change (found while building:
   Kazumi rebuilds the wrappers above a page as it animates in, which broke the back button's
   fingerprint a moment after it was read). The reference moves to an element only when that
-  element is new in this read, has the same control type, name and automation id, sits within
-  8 px of where the old one was, and is the only such element.
+  element was never on screen together with the old one, has the same control type, name and
+  automation id, sits within 8 px of where the old one was, and is the only such element.
+- `wait_for` returns only once the usable elements stop moving between two reads (at most
+  1.5 s more), so it does not hand out references from a page that is still animating in.
 
 ### 4.3 Reader
 
