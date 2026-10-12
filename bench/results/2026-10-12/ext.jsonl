@@ -1,0 +1,9 @@
+{"task":"ext","tool":"orca","run":1,"ok":true,"ms":9378,"calls":5,"outBytes":26178,"mouseMoved":false,"note":"","focusChanges":0,"samples":200}
+{"task":"ext","tool":"wmcp","run":1,"ok":false,"ms":34240,"calls":6,"outBytes":12013,"mouseMoved":true,"note":"wmcp Snapshot: MCP error -32001: Request timed out","focusChanges":0,"samples":729}
+{"task":"ext","tool":"term","run":1,"ok":false,"ms":32291,"calls":5,"outBytes":1498939,"mouseMoved":false,"note":"","focusChanges":0,"samples":687}
+{"task":"ext","tool":"wmcp","run":2,"ok":false,"ms":34214,"calls":6,"outBytes":12013,"mouseMoved":true,"note":"wmcp Snapshot: MCP error -32001: Request timed out","focusChanges":0,"samples":726}
+{"task":"ext","tool":"term","run":2,"ok":false,"ms":31521,"calls":5,"outBytes":1498799,"mouseMoved":false,"note":"","focusChanges":0,"samples":671}
+{"task":"ext","tool":"orca","run":2,"ok":true,"ms":8620,"calls":5,"outBytes":26170,"mouseMoved":false,"note":"","focusChanges":2,"samples":185}
+{"task":"ext","tool":"term","run":3,"ok":false,"ms":31583,"calls":5,"outBytes":1498796,"mouseMoved":false,"note":"","focusChanges":0,"samples":672}
+{"task":"ext","tool":"orca","run":3,"ok":true,"ms":8381,"calls":5,"outBytes":26195,"mouseMoved":false,"note":"","focusChanges":0,"samples":178}
+{"task":"ext","tool":"wmcp","run":3,"ok":false,"ms":34220,"calls":6,"outBytes":12061,"mouseMoved":true,"note":"wmcp Snapshot: MCP error -32001: Request timed out","focusChanges":0,"samples":729}

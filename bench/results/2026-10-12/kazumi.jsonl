@@ -1,0 +1,9 @@
+{"task":"kazumi","tool":"orca","run":1,"ok":false,"ms":403,"calls":1,"outBytes":1075,"mouseMoved":false,"note":"content not visible (tree: 5 lines, only the Flutter pane)","focusChanges":0,"samples":10}
+{"task":"kazumi","tool":"wmcp","run":1,"ok":true,"ms":3630,"calls":7,"outBytes":16072,"mouseMoved":true,"note":"","focusChanges":0,"samples":78}
+{"task":"kazumi","tool":"term","run":1,"ok":true,"ms":10151,"calls":6,"outBytes":20748,"mouseMoved":false,"note":"","focusChanges":0,"samples":216}
+{"task":"kazumi","tool":"wmcp","run":2,"ok":true,"ms":3303,"calls":7,"outBytes":16071,"mouseMoved":true,"note":"","focusChanges":0,"samples":72}
+{"task":"kazumi","tool":"term","run":2,"ok":true,"ms":9997,"calls":6,"outBytes":20748,"mouseMoved":false,"note":"","focusChanges":0,"samples":213}
+{"task":"kazumi","tool":"orca","run":2,"ok":false,"ms":385,"calls":1,"outBytes":1075,"mouseMoved":false,"note":"content not visible (tree: 5 lines, only the Flutter pane)","focusChanges":0,"samples":10}
+{"task":"kazumi","tool":"term","run":3,"ok":true,"ms":9823,"calls":6,"outBytes":20748,"mouseMoved":false,"note":"","focusChanges":0,"samples":211}
+{"task":"kazumi","tool":"orca","run":3,"ok":false,"ms":372,"calls":1,"outBytes":1075,"mouseMoved":false,"note":"content not visible (tree: 5 lines, only the Flutter pane)","focusChanges":0,"samples":9}
+{"task":"kazumi","tool":"wmcp","run":3,"ok":true,"ms":3244,"calls":7,"outBytes":16071,"mouseMoved":true,"note":"","focusChanges":0,"samples":70}

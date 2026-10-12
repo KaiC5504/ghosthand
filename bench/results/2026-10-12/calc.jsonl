@@ -1,0 +1,15 @@
+{"task":"calc","tool":"orca","run":1,"ok":true,"ms":5321,"calls":6,"outBytes":17581,"mouseMoved":false,"note":"","focusChanges":0,"samples":114,"neutralOk":true}
+{"task":"calc","tool":"wmcp","run":1,"ok":null,"ms":3442,"calls":7,"outBytes":6276,"mouseMoved":true,"note":"self-verify impossible (display text not in snapshot)","focusChanges":0,"samples":74,"neutralOk":true}
+{"task":"calc","tool":"term","run":1,"ok":true,"ms":5584,"calls":7,"outBytes":10331,"mouseMoved":false,"note":"","focusChanges":0,"samples":120,"neutralOk":true}
+{"task":"calc","tool":"wmcp","run":2,"ok":null,"ms":3096,"calls":7,"outBytes":6276,"mouseMoved":true,"note":"self-verify impossible (display text not in snapshot)","focusChanges":0,"samples":67,"neutralOk":true}
+{"task":"calc","tool":"term","run":2,"ok":true,"ms":5678,"calls":7,"outBytes":10334,"mouseMoved":false,"note":"","focusChanges":0,"samples":122,"neutralOk":true}
+{"task":"calc","tool":"orca","run":2,"ok":true,"ms":5220,"calls":6,"outBytes":17581,"mouseMoved":false,"note":"","focusChanges":0,"samples":113,"neutralOk":true}
+{"task":"calc","tool":"term","run":3,"ok":true,"ms":5597,"calls":7,"outBytes":10331,"mouseMoved":false,"note":"","focusChanges":0,"samples":120,"neutralOk":true}
+{"task":"calc","tool":"orca","run":3,"ok":true,"ms":5399,"calls":6,"outBytes":17581,"mouseMoved":false,"note":"","focusChanges":0,"samples":116,"neutralOk":true}
+{"task":"calc","tool":"wmcp","run":3,"ok":null,"ms":3061,"calls":7,"outBytes":6276,"mouseMoved":true,"note":"self-verify impossible (display text not in snapshot)","focusChanges":0,"samples":66,"neutralOk":true}
+{"task":"calc","tool":"orca","run":4,"ok":true,"ms":5255,"calls":6,"outBytes":17581,"mouseMoved":false,"note":"","focusChanges":0,"samples":112,"neutralOk":true}
+{"task":"calc","tool":"wmcp","run":4,"ok":null,"ms":3078,"calls":7,"outBytes":6276,"mouseMoved":true,"note":"self-verify impossible (display text not in snapshot)","focusChanges":0,"samples":67,"neutralOk":true}
+{"task":"calc","tool":"term","run":4,"ok":true,"ms":5512,"calls":7,"outBytes":10328,"mouseMoved":false,"note":"","focusChanges":0,"samples":118,"neutralOk":true}
+{"task":"calc","tool":"wmcp","run":5,"ok":null,"ms":3083,"calls":7,"outBytes":6276,"mouseMoved":true,"note":"self-verify impossible (display text not in snapshot)","focusChanges":0,"samples":67,"neutralOk":true}
+{"task":"calc","tool":"term","run":5,"ok":true,"ms":5549,"calls":7,"outBytes":10334,"mouseMoved":false,"note":"","focusChanges":0,"samples":119,"neutralOk":true}
+{"task":"calc","tool":"orca","run":5,"ok":true,"ms":5306,"calls":6,"outBytes":17581,"mouseMoved":false,"note":"","focusChanges":0,"samples":114,"neutralOk":true}

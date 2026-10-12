@@ -1,0 +1,9 @@
+{"task":"bili","tool":"orca","run":1,"ok":false,"ms":5799,"calls":5,"outBytes":18331,"mouseMoved":false,"note":"orca click: {\"code\":\"element_not_found\",\"message\":\"stale element frame; run get-app-state again and use a fresh element index\",\"data\":{\"nextSteps\":[\"Run `orca computer get-","focusChanges":0,"samples":124}
+{"task":"bili","tool":"wmcp","run":1,"ok":false,"ms":8984,"calls":10,"outBytes":75136,"mouseMoved":true,"note":"","focusChanges":0,"samples":190}
+{"task":"bili","tool":"term","run":1,"ok":true,"ms":8421,"calls":5,"outBytes":25767,"mouseMoved":false,"note":"","focusChanges":0,"samples":180}
+{"task":"bili","tool":"wmcp","run":2,"ok":true,"ms":4752,"calls":7,"outBytes":30308,"mouseMoved":true,"note":"","focusChanges":0,"samples":102}
+{"task":"bili","tool":"term","run":2,"ok":true,"ms":8701,"calls":5,"outBytes":25609,"mouseMoved":false,"note":"","focusChanges":0,"samples":186}
+{"task":"bili","tool":"orca","run":2,"ok":true,"ms":9964,"calls":5,"outBytes":47671,"mouseMoved":false,"note":"","focusChanges":0,"samples":212}
+{"task":"bili","tool":"term","run":3,"ok":true,"ms":9262,"calls":5,"outBytes":25737,"mouseMoved":false,"note":"","focusChanges":0,"samples":197}
+{"task":"bili","tool":"orca","run":3,"ok":true,"ms":7630,"calls":5,"outBytes":32407,"mouseMoved":false,"note":"","focusChanges":0,"samples":163}
+{"task":"bili","tool":"wmcp","run":3,"ok":false,"ms":8074,"calls":9,"outBytes":72386,"mouseMoved":true,"note":"","focusChanges":0,"samples":173}

@@ -1,0 +1,14 @@
+{"task":"calc","tool":"gh","run":1,"ok":true,"ms":1345,"calls":6,"outBytes":24216,"mouseMoved":false,"note":"","mouseInjected":0,"focusChanges":0,"samples":30,"neutralOk":true}
+{"task":"calc","tool":"gh","run":2,"ok":true,"ms":1147,"calls":6,"outBytes":24216,"mouseMoved":false,"note":"","mouseInjected":0,"focusChanges":0,"samples":26,"neutralOk":true}
+{"task":"calc","tool":"gh","run":3,"ok":true,"ms":1135,"calls":6,"outBytes":24216,"mouseMoved":false,"note":"","mouseInjected":0,"focusChanges":0,"samples":25,"neutralOk":true}
+{"task":"calc","tool":"gh","run":4,"ok":true,"ms":1126,"calls":6,"outBytes":24216,"mouseMoved":false,"note":"","mouseInjected":0,"focusChanges":0,"samples":25,"neutralOk":true}
+{"task":"calc","tool":"gh","run":5,"ok":true,"ms":1140,"calls":6,"outBytes":24216,"mouseMoved":false,"note":"","mouseInjected":0,"focusChanges":0,"samples":25,"neutralOk":true}
+{"task":"kazumi","tool":"gh","run":1,"ok":true,"ms":2871,"calls":5,"outBytes":17629,"mouseMoved":false,"note":"","mouseInjected":0,"focusChanges":2,"samples":62}
+{"task":"kazumi","tool":"gh","run":2,"ok":true,"ms":2647,"calls":5,"outBytes":17629,"mouseMoved":false,"note":"","mouseInjected":0,"focusChanges":2,"samples":57}
+{"task":"kazumi","tool":"gh","run":3,"ok":true,"ms":2950,"calls":5,"outBytes":17629,"mouseMoved":false,"note":"","mouseInjected":0,"focusChanges":2,"samples":64}
+{"task":"ext","tool":"gh","run":1,"ok":true,"ms":1339,"calls":4,"outBytes":25578,"mouseMoved":false,"note":"","mouseInjected":0,"focusChanges":0,"samples":30}
+{"task":"ext","tool":"gh","run":2,"ok":true,"ms":1017,"calls":4,"outBytes":25996,"mouseMoved":false,"note":"","mouseInjected":0,"focusChanges":0,"samples":23}
+{"task":"ext","tool":"gh","run":3,"ok":true,"ms":1024,"calls":4,"outBytes":25996,"mouseMoved":false,"note":"","mouseInjected":0,"focusChanges":0,"samples":23}
+{"task":"bili","tool":"gh","run":1,"ok":true,"ms":3108,"calls":5,"outBytes":41775,"mouseMoved":false,"note":"","mouseInjected":0,"focusChanges":0,"samples":68}
+{"task":"bili","tool":"gh","run":2,"ok":true,"ms":2663,"calls":4,"outBytes":38532,"mouseMoved":false,"note":"","mouseInjected":0,"focusChanges":0,"samples":57}
+{"task":"bili","tool":"gh","run":3,"ok":true,"ms":1552,"calls":4,"outBytes":13478,"mouseMoved":false,"note":"","mouseInjected":0,"focusChanges":0,"samples":34}
