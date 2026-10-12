@@ -123,7 +123,7 @@ class Desktop:
         if not self.win.is_window(hwnd):
             raise GhostError(f"the window holding {ref} closed: call windows")
         snapshot = self.snapshot(hwnd)
-        node = snapshot.find(ref)
+        node = snapshot.find(ref) or self.refs.rebind(snapshot, ref)
         if node is None:
             raise GhostError(f"stale: {ref} is no longer on screen. Read the window again.")
         return snapshot, node

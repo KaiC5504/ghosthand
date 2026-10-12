@@ -1,3 +1,5 @@
+from dataclasses import replace
+
 import pytest
 from fakes import FakeBackend, FakeElement, FakeWin, window_info
 
@@ -72,6 +74,50 @@ def test_act_refuses_stale_and_unknown_refs():
     with pytest.raises(GhostError, match="unknown ref e999"):
         desk.act("e999")
     assert save.performed == []
+
+
+def flutter_detail_page():
+    # Mid-transition, Kazumi wraps the new page in an "image" that becomes a plain group once the animation ends.
+    back = FakeElement("button", actions=("press",), rect=(219, 28, 276, 84))
+    wrapper = FakeElement("image", "开始观看").add(FakeElement("group").add(back))
+    window = FakeElement("window", "Kazumi", rid=(9,)).add(wrapper)
+    win = FakeWin(window_info(900, "Kazumi", "kazumi"))
+    return Desktop(FakeBackend({900: window}), win, sleep=lambda seconds: None), window, wrapper, back
+
+
+def back_ref(text):
+    return next(row.split()[0] for row in text.splitlines() if " button @" in row)
+
+
+def test_ref_survives_its_ancestors_changing_around_it():
+    desk, window, wrapper, back = flutter_detail_page()
+    ref = back_ref(desk.read("kazumi"))
+    wrapper.data = replace(wrapper.data, role="group", name="")
+    back.data = replace(back.data, rect=(219, 27, 276, 83))
+    out = desk.act(ref)
+    assert back.performed == ["press"]
+    assert out.startswith(f"press {ref}: done") and back_ref(out) == ref
+
+
+def test_stale_ref_is_not_moved_to_a_lookalike_somewhere_else():
+    desk, window, wrapper, back = flutter_detail_page()
+    ref = back_ref(desk.read("kazumi"))
+    wrapper.data = replace(wrapper.data, role="group", name="")
+    back.data = replace(back.data, rect=(600, 400, 657, 456))
+    with pytest.raises(GhostError, match=f"stale: {ref}"):
+        desk.act(ref)
+    assert back.performed == []
+
+
+def test_stale_ref_is_not_moved_when_two_lookalikes_could_be_it():
+    desk, window, wrapper, back = flutter_detail_page()
+    ref = back_ref(desk.read("kazumi"))
+    wrapper.data = replace(wrapper.data, role="group", name="")
+    twin = FakeElement("button", actions=("press",), rect=(220, 28, 277, 84))
+    window.add(FakeElement("pane").add(twin))
+    with pytest.raises(GhostError, match=f"stale: {ref}"):
+        desk.act(ref)
+    assert back.performed == [] and twin.performed == []
 
 
 def test_act_without_a_mouse_free_action_never_performs():

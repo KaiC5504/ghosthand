@@ -114,6 +114,11 @@ apart, e.g. a back arrow. The available actions are listed in brackets.
 - Before every action the server re-resolves the reference and checks the fingerprint. If the
   element is gone or has changed, the action is refused with `stale: read again` — it never
   falls through to a different element.
+- One exception keeps a reference alive while only its ancestors change (found while building:
+  Kazumi rebuilds the wrappers above a page as it animates in, which broke the back button's
+  fingerprint a moment after it was read). The reference moves to an element only when that
+  element is new in this read, has the same control type, name and automation id, sits within
+  8 px of where the old one was, and is the only such element.
 
 ### 4.3 Reader
 
