@@ -1,6 +1,6 @@
 {
   "name": "ghosthand",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Mouse-free control of Windows apps plus a DevTools test Chrome, for building and testing apps without touching KaiC's mouse.",
   "author": { "name": "KaiC5504" },
   "license": "MIT",
