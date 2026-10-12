@@ -54,6 +54,10 @@ def test_unexpected_failures_say_what_broke(desktop, monkeypatch):
 def test_real_server_starts_its_ui_thread_in_a_fresh_process():
     # comtypes sets up COM the moment it is first imported, which in the real server happens on
     # the UI Automation thread; inside pytest it was already imported, so a fresh interpreter is needed.
-    code = "import asyncio; from ghosthand import server; print(asyncio.run(server.server.call_tool('windows', {})).content[0].text[:40])"
+    code = "import asyncio; from ghosthand import server; print(len(asyncio.run(server.server.call_tool('windows', {})).content[0].text))"
     result = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, encoding="utf-8", timeout=60)
     assert result.returncode == 0, result.stderr[-800:]
+
+
+def test_window_numbers_can_be_sent_as_numbers(desktop):
+    assert 'e2 button "Save"' in call("read", {"window": 100})[0].text

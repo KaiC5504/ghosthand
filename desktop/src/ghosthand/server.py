@@ -72,7 +72,7 @@ async def launch(target: str, args: list[str] | None = None, timeout: float = 20
 
 
 @server.tool()
-async def read(window: str, ref: str | None = None, query: str | None = None) -> str:
+async def read(window: str | int, ref: str | None = None, query: str | None = None) -> str:
     """Read one window, one line per element: e12 button "Save" [press].
 
     window is a number from windows, an app name or part of a title. ref reads only that
@@ -94,7 +94,7 @@ async def set_text(ref: str, text: str, submit: bool = False) -> str:
 
 
 @server.tool()
-async def keys(window: str, keys: str, allow_focus: bool = False) -> str:
+async def keys(window: str | int, keys: str, allow_focus: bool = False) -> str:
     """Send keys such as "enter", "tab tab", "f5" in the background.
 
     Combinations like ctrl+s need allow_focus=true, which brings the window to the front:
@@ -104,13 +104,13 @@ async def keys(window: str, keys: str, allow_focus: bool = False) -> str:
 
 
 @server.tool()
-async def wait_for(window: str, text: str, gone: bool = False, timeout: float = 10.0) -> str:
+async def wait_for(window: str | int, text: str, gone: bool = False, timeout: float = 10.0) -> str:
     """Wait until text appears in a window (or disappears with gone=true), then return the fresh window."""
     return await _call("wait_for", window, text, gone, timeout)
 
 
 @server.tool()
-async def screenshot(window: str) -> Image:
+async def screenshot(window: str | int) -> Image:
     """A picture of one window, even when other windows cover it."""
     return Image(data=await _call("screenshot", window), format="png")
 

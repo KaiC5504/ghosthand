@@ -17,9 +17,9 @@ def setup():
     editor = FakeElement("window", "Editor", rid=(1,)).add(save, field, canvas)
     calc = FakeElement("window", "Calculator", rid=(2,))
     win = FakeWin(
-        window_info(EDITOR, "Editor - notes.txt", "notepad"),
-        window_info(CALC, "Calculator", "ApplicationFrameHost"),
-        window_info(OTHER, "Claude", "claude"),
+        window_info(EDITOR, "Editor - notes.txt", "notepad", pid=10),
+        window_info(CALC, "Calculator", "ApplicationFrameHost", pid=20),
+        window_info(OTHER, "Claude", "claude", pid=30),
     )
     win.front = OTHER
     desk = Desktop(FakeBackend({EDITOR: editor, CALC: calc}), win, sleep=lambda seconds: None)
@@ -298,3 +298,19 @@ def test_launch_without_a_new_window_times_out():
 def test_screenshot_returns_the_window_picture():
     desk, *_ = setup()
     assert desk.screenshot("notepad") == b"\x89PNG fake 100"
+
+
+def test_kaic_switching_windows_himself_is_left_alone():
+    desk, win, save, *_ = setup()
+    save.on_perform = lambda action: setattr(win, "front", CALC)
+    out = desk.act(ref_of(desk.read("notepad"), "Save"))
+    assert win.front == CALC
+    assert "focus" not in out.splitlines()[0]
+
+
+def test_focus_taken_by_another_window_of_the_same_app_is_handed_back():
+    desk, win, save, *_ = setup()
+    win.rows.append(window_info(110, "Editor - Save as", "notepad", pid=10))
+    save.on_perform = lambda action: setattr(win, "front", 110)
+    assert "(focus handed back)" in desk.act(ref_of(desk.read(EDITOR), "Save")).splitlines()[0]
+    assert win.front == OTHER

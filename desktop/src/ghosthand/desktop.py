@@ -154,11 +154,20 @@ class Desktop:
 
     def _hand_back(self, front: int, target: int) -> str:
         # Apps such as Kazumi pull themselves forward when used; KaiC's window gets focus back.
-        if not front or front == target or self.win.foreground() == front:
+        # If something else is in front, KaiC switched windows himself and stays where he went.
+        now = self.win.foreground()
+        if not front or front == target or now == front or not self._same_app(now, target):
             return ""
         if self.win.set_foreground(front):
             return "focus handed back"
         return "the app took focus and Windows would not let ghosthand hand it back"
+
+    def _same_app(self, a: int, b: int) -> bool:
+        if a == b:
+            return True
+        if not (a and self.win.is_window(a) and self.win.is_window(b)):
+            return False
+        return self.win.info(a).pid == self.win.info(b).pid
 
     def _after(self, hwnd: int, headline: str, note: str) -> str:
         if note:
