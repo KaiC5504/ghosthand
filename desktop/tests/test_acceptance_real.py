@@ -80,13 +80,14 @@ class MouseWatch:
         user32.UnhookWindowsHookEx(hook)
 
     def __exit__(self, *exc):
+        self.end = cursor()
         user32.PostThreadMessageW(self.thread_id, WM_QUIT, 0, 0)
         self.thread.join(2)
 
     def assert_untouched(self):
         assert self.injected == 0, f"software sent {self.injected} mouse events"
         if self.physical == 0:
-            assert cursor() == self.start
+            assert self.end == self.start
 
 
 def refs(text, pattern):
@@ -132,7 +133,6 @@ def test_calculator_without_the_mouse(desk):
 
 
 def test_kazumi_open_a_card_and_go_back(desk):
-    front = desk.win.foreground()
     with MouseWatch() as mouse:
         if not any(row.app == "kazumi" for row in desk.win.list_windows()):
             desk.launch(KAZUMI)
@@ -141,12 +141,13 @@ def test_kazumi_open_a_card_and_go_back(desk):
         card, title = card_row.split()[0], card_row.split('"')[1]
         desk.act(card)
         detail = desk.wait_for("kazumi", "更多操作")
-        unnamed = [re.match(r"^(e\d+) button @(\d+),(\d+)", row.strip()) for row in detail.splitlines()]
+        unnamed = [re.match(r"^(e\d+) button @(-?\d+),(-?\d+)", row.strip()) for row in detail.splitlines()]
         back = min((match for match in unnamed if match), key=lambda match: int(match[2]) + int(match[3]))[1]
         desk.act(back)
         assert title in desk.wait_for("kazumi", title)
     mouse.assert_untouched()
-    assert desk.win.foreground() == front
+    # KaiC may switch windows himself meanwhile; the promise is that Kazumi does not keep the focus.
+    assert desk.win.info(desk.win.foreground()).app != "kazumi"
     assert any(row.app == "kazumi" for row in desk.win.list_windows())
 
 
@@ -157,7 +158,7 @@ def test_chrome_address_bar_works_while_another_window_is_in_front(desk, chrome_
         bar = refs(desk.read(chrome_window), r'^e\d+ edit "Address and search bar"')[0]
         desk.set_text(bar, "https://example.com/", submit=True)
         assert "Example Domain" in desk.wait_for(chrome_window, "Example Domain")
-    assert desk.win.foreground() == calc
+    assert desk.win.foreground() != chrome_window
     mouse.assert_untouched()
 
 
@@ -172,3 +173,11 @@ def test_extensions_page_survives_the_tooltip_loop(desk, chrome_window):
         after = desk.wait_for(chrome_window, "Reloaded", timeout=3)
     assert "Reloaded" in after
     assert time.perf_counter() - started < 5
+
+
+def test_closing_a_window_through_its_own_button(desk):
+    with MouseWatch() as mouse:
+        text = desk.read(calculator(desk))
+        out = desk.act(refs(text, r'^e\d+ button "Close Calculator"')[0])
+    assert out.endswith("; the window closed")
+    mouse.assert_untouched()

@@ -314,3 +314,26 @@ def test_focus_taken_by_another_window_of_the_same_app_is_handed_back():
     save.on_perform = lambda action: setattr(win, "front", 110)
     assert "(focus handed back)" in desk.act(ref_of(desk.read(EDITOR), "Save")).splitlines()[0]
     assert win.front == OTHER
+
+
+def test_action_whose_app_errors_while_closing_its_window_still_succeeds():
+    desk, win, save, *_ = setup()
+
+    def close_and_complain(action):
+        win.rows.pop(0)
+        raise GhostError("press failed: the app refused it (element not available). Read the window again.")
+
+    save.on_perform = close_and_complain
+    ref = ref_of(desk.read("notepad"), "Save")
+    assert desk.act(ref) == f"press {ref}: done; the window closed"
+
+
+def test_action_refused_by_a_window_that_stays_open_is_an_error():
+    desk, win, save, *_ = setup()
+
+    def refuse(action):
+        raise GhostError("press failed: the app refused it (busy). Read the window again.")
+
+    save.on_perform = refuse
+    with pytest.raises(GhostError, match="press failed"):
+        desk.act(ref_of(desk.read("notepad"), "Save"))

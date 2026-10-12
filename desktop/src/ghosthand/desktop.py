@@ -148,7 +148,12 @@ class Desktop:
 
     def _guarded(self, hwnd: int, work: Callable[[], None]) -> str:
         front = self.win.foreground()
-        work()
+        try:
+            work()
+        except GhostError:
+            # OK and Close buttons can tear their window down mid-call, and the app then reports an error.
+            if self.win.is_window(hwnd):
+                raise
         self.sleep(SETTLE)
         return self._hand_back(front, hwnd)
 

@@ -213,7 +213,7 @@ const kazumi = {
     if (!card) throw new Fail("card not in read");
     await G(r, "act", { ref: card });
     const detail = await G(r, "wait_for", { window: "kazumi", text: "更多操作", timeout: 5 });
-    const back = detail.split("\n").map((l) => l.trim().match(/^(e\d+) button @(\d+),(\d+)/)).filter(Boolean)
+    const back = detail.split("\n").map((l) => l.trim().match(/^(e\d+) button @(-?\d+),(-?\d+)/)).filter(Boolean)
       .sort((a, b) => (+a[2] + +a[3]) - (+b[2] + +b[3]))[0];
     if (!back) throw new Fail("no unlabeled back button");
     await sleep(KAZUMI_SETTLE_MS);
