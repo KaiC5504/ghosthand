@@ -15,9 +15,21 @@ claude mcp list
 ```
 
 `plugin:ghosthand:ghosthand` and `plugin:ghosthand:ghosthand-browser` should both show
-`✔ Connected`. A plugin from a local folder runs straight from this repo, so edits here take
-effect at the next Claude Code session (or `/reload-plugins`). The test Chrome keeps its
-profile in `%LOCALAPPDATA%\ghosthand\chrome-profile`.
+`✔ Connected`. The test Chrome keeps its profile in `%LOCALAPPDATA%\ghosthand\chrome-profile`
+and its logs, snapshots and downloads in `%LOCALAPPDATA%\ghosthand\playwright-out`.
+
+### After changing the code
+
+The terminal `claude` runs the plugin straight from this repo, but the desktop app runs the
+copy made at install time in `~/.claude/plugins/cache/ghosthand/ghosthand/<version>`. To ship a
+change to both, bump `version` in `.claude-plugin/plugin.json`, commit, then:
+
+```bash
+claude plugin install ghosthand@ghosthand
+```
+
+and start a new session. (Reinstalling the same version fails while any open session is still
+running the old copy, which is why the version goes up.)
 
 ## What Claude gets
 
@@ -104,12 +116,20 @@ rows show focus changes.
   ghosthand never falls back to the mouse.
 - Key combinations (ctrl+s) need the window in front: Claude asks before doing that.
 - Some apps pull themselves to the front when used; ghosthand hands focus back, and says so
-  when Windows refuses.
+  when Windows refuses (seen once, right after Kazumi restored itself from minimised). If you
+  switched to another app yourself during an action, it leaves you there.
+- Background keys go to the window's focused control. An app that ignores them cannot be
+  detected from outside; the fresh read after `keys` shows whether they landed.
 - `wait_for` waits until the page stops moving, up to 1.5 s more on a page that never does
   (an always-running animation).
 - Elements without a runtime id (Flutter) are known by a fingerprint. When only their
-  wrappers change, a ref moves to an identical element at the same spot that was never on
-  screen with it; anything less certain is refused as stale.
+  wrappers change, a ref moves to an identical element of the same size at the same spot that
+  was never on screen with it, and only from the window's previous read; anything less certain
+  is refused as stale.
+- A read stops at 2000 elements or 64 levels; reading again with a ref walks that part with its
+  own 2000-element budget.
 - The server takes about 1.3 s to start; 1 s of that is the MCP Python SDK loading.
-- `claude plugin install` also copies this folder (with its venv) into
-  `~/.claude/plugins/cache/ghosthand`, which a local-folder plugin does not use.
+- The installed copy includes this folder's venv and `node_modules` (about 110 MB per version);
+  old version folders in the plugin cache can be deleted once no session uses them.
+- The benchmark table above was measured before the final review fixes (focus, keys, subtree
+  reads, rebinding); the live tests passed on the final code.
