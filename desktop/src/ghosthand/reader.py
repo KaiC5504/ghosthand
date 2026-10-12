@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from ghosthand.model import Backend, ElementInfo, GhostError, Node, Snapshot
+from ghosthand.model import Backend, GhostError, Node, Snapshot
 
 MAX_DEPTH = 64
 MAX_NODES = 2000
@@ -26,7 +26,10 @@ def walk(backend: Backend, root: object, *, max_depth: int = MAX_DEPTH, max_node
                 truncated = True
                 break
             info = backend.info(handle)
-            if _loops_back(backend, info, handle, node, seen_runtime_ids):
+            # Chrome tooltips point back at their own window. Elements without a runtime id
+            # (Flutter's) cannot be proven to repeat: UIA's CompareElements calls two different
+            # ones equal when their properties match, so loops through them end at the caps.
+            if info.runtime_id and info.runtime_id in seen_runtime_ids:
                 continue
             kind = (info.role, info.name, info.automation_id)
             child = Node(info=info, handle=handle, parent=node, depth=node.depth + 1, sibling_index=siblings.get(kind, 0))
@@ -39,19 +42,6 @@ def walk(backend: Backend, root: object, *, max_depth: int = MAX_DEPTH, max_node
         # First child next, so when the element cap hits, it cuts the end of the window.
         pending.extend(reversed(added))
     return preorder(top), truncated
-
-
-def _loops_back(backend: Backend, info: ElementInfo, handle: object, parent: Node, seen_runtime_ids: set) -> bool:
-    # Chrome tooltips point back at their own window. Flutter elements have no runtime id,
-    # so for those the only proof of a loop is UIA saying the element is one of its ancestors.
-    if info.runtime_id:
-        return info.runtime_id in seen_runtime_ids
-    ancestor = parent
-    while ancestor is not None:
-        if ancestor.info == info and backend.same(ancestor.handle, handle):
-            return True
-        ancestor = ancestor.parent
-    return False
 
 
 def preorder(node: Node) -> list[Node]:

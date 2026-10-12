@@ -19,7 +19,6 @@ class FakeElement:
 class FakeBackend:
     def __init__(self, windows):
         self.windows = windows
-        self.compares = 0
 
     def root(self, hwnd):
         return self.windows[hwnd]
@@ -29,10 +28,6 @@ class FakeBackend:
 
     def children(self, element):
         return list(element.children)
-
-    def same(self, a, b):
-        self.compares += 1
-        return a is b
 
     def perform(self, element, action):
         element.performed.append(action)

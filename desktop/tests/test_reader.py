@@ -37,14 +37,28 @@ def test_flutter_elements_without_ids_are_all_kept():
     assert [node.sibling_index for node in cards if node.info.name == "card 0"] == [0, 1]
 
 
-def test_loop_through_elements_without_ids_is_cut():
+class LookalikeBackend(FakeBackend):
+    """UIA's CompareElements calls two different id-less elements equal when their properties match."""
+
+    def same(self, a, b):
+        return a.data == b.data
+
+
+def test_child_that_looks_like_its_parent_is_still_read():
+    inner = FakeElement("group").add(FakeElement("image", "药屋少女的呢喃 第三季"))
+    window = FakeElement("window", "Kazumi", rid=(1,)).add(FakeElement("group").add(inner))
+    nodes, truncated = walk(LookalikeBackend({1: window}), window)
+    assert names(nodes) == ["Kazumi", "", "", "药屋少女的呢喃 第三季"]
+    assert not truncated
+
+
+def test_loop_through_elements_without_ids_stops_at_the_depth_cap():
     group = FakeElement("group")
     group.add(FakeElement("image", "card"), group)
     window = FakeElement("window", "Kazumi", rid=(1,)).add(group)
-    backend = FakeBackend({1: window})
-    nodes, _ = walk(backend, window)
-    assert names(nodes) == ["Kazumi", "", "card"]
-    assert backend.compares >= 1
+    nodes, truncated = walk(FakeBackend({1: window}), window)
+    assert truncated
+    assert max(node.depth for node in nodes) == MAX_DEPTH
 
 
 def test_depth_is_capped():
