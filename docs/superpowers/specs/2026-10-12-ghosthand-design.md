@@ -99,8 +99,11 @@ w 3737990 "Kazumi"
   e19 text "Display is 42"
 ```
 
-Plain text elements are included (results, toasts, labels). Unnamed wrapper groups and panes
-with a single child are folded away. The available actions are listed in brackets.
+Plain text elements are included (results, toasts, labels). Unnamed elements with nothing to
+do are folded away (their children move up), and so are unnamed groups, panes and custom
+elements whose only action is `default`. An unnamed element that can be used shows its
+top-left position instead of a name (`e8 button @219,27 [press]`) so it can still be told
+apart, e.g. a back arrow. The available actions are listed in brackets.
 
 ### 4.2 References
 
@@ -131,8 +134,10 @@ SelectionItem.Select, ExpandCollapse, `LegacyIAccessible.DoDefaultAction`. If no
 result is `needs a real click` together with the element's bounds and a suggestion to take a
 `screenshot`; the server never moves the mouse.
 
-`set_text` uses ValuePattern.SetValue, falling back to posting `WM_CHAR` to the window.
-`submit` posts Enter in the background.
+`set_text` uses ValuePattern.SetValue. A field without it gets a clear error (characters
+posted to the window would land wherever that window's keyboard focus is, which may not be
+the field); Claude then asks KaiC before using `keys` with `allow_focus`. `submit` posts Enter
+in the background.
 
 ### 4.5 Keys
 
@@ -173,8 +178,10 @@ between read and action.
 ## 5. Test Chrome
 
 - Playwright MCP, pinned to 0.0.83, launched with the installed Google Chrome and
-  `--user-data-dir %LOCALAPPDATA%\ghosthand\chrome-profile` (permanent, outside every repo).
-  Visible by default; a hidden mode is available.
+  `--user-data-dir %LOCALAPPDATA%\ghosthand\chrome-profile` (permanent, outside every repo;
+  without this flag 0.0.83 uses a throwaway temporary profile). Visible by default; a hidden
+  mode is available. Also `--allow-unrestricted-file-access`, which the cookie import needs
+  (section 6), and `--caps devtools`.
 - Gives console messages, network requests, page snapshots, JavaScript evaluation and
   screenshots. It drives Chrome through DevTools, so it never touches the mouse.
 - BTR in the test Chrome: branded Chrome no longer accepts `--load-extension`, so KaiC loads
@@ -190,8 +197,11 @@ between read and action.
 2. The popup lists sites; KaiC ticks the ones he wants. The extension requests host access
    for just those sites (optional host permissions), reads them with `chrome.cookies.getAll`,
    and saves a Playwright storage-state file to `Downloads\ghosthand\`.
-3. Claude loads the file into the test Chrome with Playwright MCP's
-   `browser_set_storage_state`, then deletes the file at once.
+3. Claude imports the file with Playwright MCP's `browser_run_code_unsafe`: the code opens
+   the file in a throwaway tab, adds its cookies to the test Chrome and returns only a count,
+   then Claude deletes the file at once. (0.0.83 has no `browser_set_storage_state`, and it
+   echoes the code it runs, so the cookies must never be inside the code — checked: the
+   response contains the file path and the count, never a cookie value.)
 4. Covers cookie-based logins such as bilibili's `SESSDATA`. Logins kept in a site's
    localStorage are not exported; KaiC signs into those once in the test Chrome.
 
@@ -232,17 +242,25 @@ Done when:
 How KaiC checks it himself: run the two commands; then, in a new session, ask Claude to open
 Kazumi, open 药屋少女的呢喃 and go back, while he keeps using his mouse.
 
-## 9. Risks to settle first in the plan
+## 9. Risks
 
-- **Background Enter in Chrome's address bar.** Posting Enter to Chrome may be ignored. Plan
-  step 1 is a spike; fallbacks are invoking the omnibox's suggestion item, or (for the real
-  Chrome only) asking for `allow_focus`.
+Settled while planning (2026-10-13):
+
+- **Background Enter in Chrome's address bar works**: ValuePattern.SetValue plus a posted
+  `WM_KEYDOWN`/`WM_KEYUP` Enter navigated a test window. The real-app checks confirm it also
+  works while another window is in front.
+- **Playwright MCP 0.0.83 has no `browser_set_storage_state`**: the cookie import uses
+  `browser_run_code_unsafe` instead (section 6).
+- **Flutter cards report an empty LegacyIAccessible default action** yet DoDefaultAction opens
+  them, so `default` is offered for focusable elements with no other mouse-free action.
+- **Speed**: the COM walker read Kazumi (55 elements) in 0.1 s and bilibili's homepage (295
+  elements as Chrome exposes it) in 0.14 s.
+
+Still open:
 - **Apps that ignore `DoDefaultAction` or posted keys.** Measured per app in the real-app
   checks; the `needs a real click` path covers them honestly.
 - **Restoring focus.** Windows limits which processes may set the foreground window; the focus
   guard reports when it cannot.
-- **Playwright MCP's `browser_set_storage_state`** must exist in the pinned version; verified in
-  the plan before building the extension.
 
 ## 10. Out of scope
 
