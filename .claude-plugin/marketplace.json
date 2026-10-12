@@ -1,0 +1,12 @@
+{
+  "name": "ghosthand",
+  "description": "KaiC's mouse-free desktop and browser automation",
+  "owner": { "name": "KaiC5504" },
+  "plugins": [
+    {
+      "name": "ghosthand",
+      "source": "./",
+      "description": "Mouse-free control of Windows apps plus a DevTools test Chrome."
+    }
+  ]
+}

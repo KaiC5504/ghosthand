@@ -1,0 +1,24 @@
+{
+  "name": "ghosthand",
+  "version": "0.1.0",
+  "description": "Mouse-free control of Windows apps plus a DevTools test Chrome, for building and testing apps without touching KaiC's mouse.",
+  "author": { "name": "KaiC5504" },
+  "license": "MIT",
+  "keywords": ["windows", "ui-automation", "testing", "playwright", "mcp"],
+  "mcpServers": {
+    "ghosthand": {
+      "command": "uv",
+      "args": ["--directory", "${CLAUDE_PLUGIN_ROOT}/desktop", "run", "--frozen", "ghosthand"]
+    },
+    "ghosthand-browser": {
+      "command": "cmd",
+      "args": [
+        "/c", "npx", "-y", "@playwright/mcp@0.0.83",
+        "--browser", "chrome",
+        "--user-data-dir", "%LOCALAPPDATA%\\ghosthand\\chrome-profile",
+        "--allow-unrestricted-file-access",
+        "--caps", "devtools"
+      ]
+    }
+  }
+}
