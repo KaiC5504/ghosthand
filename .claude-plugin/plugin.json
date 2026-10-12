@@ -16,6 +16,7 @@
         "/c", "npx", "-y", "@playwright/mcp@0.0.83",
         "--browser", "chrome",
         "--user-data-dir", "%LOCALAPPDATA%\\ghosthand\\chrome-profile",
+        "--output-dir", "%LOCALAPPDATA%\\ghosthand\\playwright-out",
         "--allow-unrestricted-file-access",
         "--caps", "devtools"
       ]
