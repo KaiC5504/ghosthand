@@ -122,9 +122,11 @@ apart, e.g. a back arrow. The available actions are listed in brackets.
 - Properties are fetched with a `CacheRequest` per subtree (name, control type, automation id,
   bounding rectangle, runtime id, supported patterns, value) to keep reads fast.
 - Iterative walk, never recursive. Loop safety: an element is skipped when its runtime id was
-  already visited, or — for elements without one — when it compares equal
-  (`CompareElements`) to one of its ancestors. Hard caps: depth 64, 2000 nodes per read; the
-  output says when a cap was hit.
+  already visited. Elements without one (Flutter's) cannot be proven to repeat:
+  `CompareElements` calls two different id-less elements equal when their properties match
+  (found while building: Kazumi nests identical wrapper groups, and an ancestor check cut its
+  whole page), so a loop through them ends at the caps. Hard caps: depth 64, 2000 nodes per
+  read; the output says when a cap was hit.
 - Scope is always one window. The taskbar and other windows never appear in a read.
 
 ### 4.4 Actions
