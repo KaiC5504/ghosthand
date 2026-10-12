@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from ghosthand.model import Backend, ElementInfo, Node
+from ghosthand.model import Backend, ElementInfo, GhostError, Node, Snapshot
 
 MAX_DEPTH = 64
 MAX_NODES = 2000
@@ -61,3 +61,63 @@ def preorder(node: Node) -> list[Node]:
         ordered.append(current)
         stack.extend(reversed(current.children))
     return ordered
+
+
+CONTAINER_ROLES = {"group", "pane", "custom"}
+NAME_LIMIT = 120
+
+
+def folded(node: Node) -> bool:
+    info = node.info
+    if node.parent is None or info.name or info.value:
+        return False
+    actions = set(info.actions)
+    return not actions or (actions <= {"default"} and info.role in CONTAINER_ROLES)
+
+
+def clean(text: str) -> str:
+    text = " ".join(text.split())
+    return text if len(text) <= NAME_LIMIT else text[: NAME_LIMIT - 1] + "…"
+
+
+def line(node: Node, indent: int) -> str:
+    info = node.info
+    parts = [f"{'  ' * indent}{node.ref} {info.role}"]
+    if info.name:
+        parts.append(f'"{clean(info.name)}"')
+    elif info.actions:
+        # Unnamed controls such as Kazumi's back arrow are told apart by where they are.
+        parts.append(f"@{info.rect[0]},{info.rect[1]}")
+    if info.value and info.value != info.name:
+        parts.append(f'= "{clean(info.value)}"')
+    if info.actions:
+        parts.append(f"[{', '.join(info.actions)}]")
+    return " ".join(parts)
+
+
+def render(snapshot: Snapshot, *, query: str | None = None, subtree: str | None = None) -> str:
+    lines = [f'window {snapshot.hwnd} "{clean(snapshot.title)}" ({snapshot.app})']
+    top = snapshot.root
+    if subtree:
+        top = snapshot.find(subtree)
+        if top is None:
+            raise GhostError(f"stale: {subtree} is no longer on screen. Read the window again.")
+    nodes = preorder(top)
+    if query:
+        needle = query.lower()
+        hits = [node for node in nodes if needle in f"{node.info.name} {node.info.value or ''}".lower()]
+        lines += [line(node, 1) for node in hits] or [f'  nothing matches "{query}"']
+    else:
+        level = {id(top): 0}
+        if subtree:
+            lines.append(line(top, 1))
+            level[id(top)] = 1
+        for node in nodes[1:]:
+            depth = level[id(node.parent)]
+            if not folded(node):
+                depth += 1
+                lines.append(line(node, depth))
+            level[id(node)] = depth
+    if snapshot.truncated:
+        lines.append(f"(read stopped early: over {MAX_NODES} elements or {MAX_DEPTH} levels; read a subtree ref or use query)")
+    return "\n".join(lines)
