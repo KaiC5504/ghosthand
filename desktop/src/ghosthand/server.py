@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import ctypes
+import sys
 from concurrent.futures import ThreadPoolExecutor
 
 from mcp.server.mcpserver import Image, MCPServer
@@ -21,6 +22,9 @@ _desktop: Desktop | None = None
 
 
 def _start_com() -> None:
+    # comtypes sets up COM for whichever thread first imports it, single-threaded unless
+    # sys.coinit_flags says otherwise, and a thread's COM mode cannot change afterwards.
+    sys.coinit_flags = 0  # COINIT_MULTITHREADED
     import comtypes
 
     comtypes.CoInitializeEx(comtypes.COINIT_MULTITHREADED)
@@ -49,6 +53,10 @@ async def _call(method: str, *args):
         return await asyncio.get_running_loop().run_in_executor(_uia_thread, work)
     except GhostError as error:
         raise ToolError(str(error)) from None
+    except Exception as error:
+        raise ToolError(
+            f"ghosthand hit an internal error ({type(error).__name__}: {error}). Read the window again; tell KaiC if it repeats."
+        ) from None
 
 
 @server.tool()

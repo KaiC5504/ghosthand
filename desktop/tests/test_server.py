@@ -1,4 +1,6 @@
 import asyncio
+import subprocess
+import sys
 
 import pytest
 from fakes import FakeBackend, FakeElement, FakeWin, window_info
@@ -38,3 +40,20 @@ def test_errors_come_back_as_plain_messages(desktop):
 def test_screenshot_is_a_png_image(desktop):
     content = call("screenshot", {"window": "notepad"})
     assert content[0].type == "image" and content[0].mime_type == "image/png"
+
+
+def test_unexpected_failures_say_what_broke(desktop, monkeypatch):
+    def broken(*args):
+        raise RuntimeError("the walker fell over")
+
+    monkeypatch.setattr(desktop, "read", broken)
+    with pytest.raises(ToolError, match="RuntimeError: the walker fell over"):
+        asyncio.run(server.server.call_tool("read", {"window": "notepad"}))
+
+
+def test_real_server_starts_its_ui_thread_in_a_fresh_process():
+    # comtypes sets up COM the moment it is first imported, which in the real server happens on
+    # the UI Automation thread; inside pytest it was already imported, so a fresh interpreter is needed.
+    code = "import asyncio; from ghosthand import server; print(asyncio.run(server.server.call_tool('windows', {})).content[0].text[:40])"
+    result = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, encoding="utf-8", timeout=60)
+    assert result.returncode == 0, result.stderr[-800:]
