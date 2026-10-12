@@ -38,6 +38,8 @@ running the old copy, which is why the version goes up.)
   Chrome's own pages such as `chrome://extensions`.
 - **ghosthand-browser**: Playwright MCP 0.0.83 on a separate Chrome with its own permanent
   profile: console messages, network requests, JavaScript and page snapshots.
+- **docs/build-notes.md**: build status, what is left to do, how to ship a change, and the
+  decisions made while building.
 - **skills/ghosthand**: tells Claude which one to use, the read → act → wait_for loop, and the
   hard rules (never the mouse; ask before bringing a window to the front).
 - **cookie-export/**: load it unpacked in your real Chrome to copy a site's logins into the
