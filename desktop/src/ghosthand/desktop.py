@@ -82,7 +82,7 @@ class Desktop:
 
         def work() -> None:
             if not self.backend.set_value(node.handle, text):
-                raise GhostError(f"{ref} {node.info.role} takes no direct text. Ask KaiC before using keys with allow_focus.")
+                raise GhostError(f"{ref} {node.info.role} takes no direct text. Ask the user before using keys with allow_focus.")
             if submit:
                 self.win.post_keys(snapshot.hwnd, parse_keys("enter"))
 
@@ -98,7 +98,7 @@ class Desktop:
             if any(stroke.modifiers for stroke in strokes):
                 raise GhostError(
                     "ctrl/alt/shift/win combinations only work with the window in front. "
-                    "Ask KaiC, then call keys again with allow_focus=true."
+                    "Ask the user, then call keys again with allow_focus=true."
                 )
             note = self._guarded(hwnd, lambda: self.win.post_keys(hwnd, strokes))
         return self._after(hwnd, f"sent {keys}", note)
@@ -174,8 +174,8 @@ class Desktop:
         return self._hand_back(front, hwnd)
 
     def _hand_back(self, front: int, target: int) -> str:
-        # Apps such as Kazumi pull themselves forward when used; KaiC's window gets focus back.
-        # If something else is in front, KaiC switched windows himself and stays where he went.
+        # Apps such as Kazumi pull themselves forward when used; the user's window gets focus back.
+        # If something else is in front, the user switched windows themselves and stays there.
         now = self.win.foreground()
         if not front or front == target or now == front or not self._same_app(now, target):
             return ""

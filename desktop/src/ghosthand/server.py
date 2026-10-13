@@ -17,7 +17,7 @@ from ghosthand.model import GhostError
 INSTRUCTIONS = (
     "Mouse-free control of Windows apps. Call read on a window, then act/set_text on the refs it "
     "shows; each action returns the window's fresh state. Use wait_for instead of sleeping. "
-    "ghosthand never moves the mouse: on 'needs a real click', take a screenshot and tell KaiC. "
+    "ghosthand never moves the mouse: on 'needs a real click', take a screenshot and tell the user. "
     "Errors are logged by themselves; when a call says done but the fresh state shows it did not "
     "work, or a ghosthand-browser call fails, call report_issue."
 )
@@ -62,7 +62,7 @@ async def _call(method: str, **args):
         _log.call(method, args, time.perf_counter() - started, str(error))
         raise ToolError(str(error)) from None
     except Exception as error:
-        message = f"ghosthand hit an internal error ({type(error).__name__}: {error}). Read the window again; tell KaiC if it repeats."
+        message = f"ghosthand hit an internal error ({type(error).__name__}: {error}). Read the window again; tell the user if it repeats."
         _log.call(method, args, time.perf_counter() - started, message, "".join(traceback.format_exception(error)))
         raise ToolError(message) from None
     _log.call(method, args, time.perf_counter() - started)
@@ -108,7 +108,7 @@ async def keys(window: str | int, keys: str, allow_focus: bool = False) -> str:
     """Send keys such as "enter", "tab tab", "f5" in the background.
 
     Combinations like ctrl+s need allow_focus=true, which brings the window to the front:
-    ask KaiC before using it.
+    ask the user before using it.
     """
     return await _call("keys", window=window, keys=keys, allow_focus=allow_focus)
 
@@ -132,7 +132,7 @@ async def report_issue(what_happened: str, expected: str, tool: str = "") -> str
     try:
         path = _log.report(what_happened, expected, tool)
     except OSError as error:
-        raise ToolError(f"could not write the failure log ({error}); tell KaiC what went wrong instead") from None
+        raise ToolError(f"could not write the failure log ({error}); tell the user what went wrong instead") from None
     return f"logged to {path}"
 
 

@@ -47,7 +47,7 @@ def cursor():
 
 
 class MouseWatch:
-    """Tells mouse input injected by software apart from KaiC's own hand while he keeps working."""
+    """Tells mouse input injected by software apart from the user's own hand while they keep working."""
 
     def __enter__(self):
         self.injected = self.physical = 0
@@ -146,7 +146,7 @@ def test_kazumi_open_a_card_and_go_back(desk):
         returned = desk.act(back)
         assert title in desk.wait_for("kazumi", title)
     mouse.assert_untouched()
-    # KaiC may switch windows himself meanwhile. The promise: Kazumi does not keep the focus, or
+    # The user may switch windows themselves meanwhile. The promise: Kazumi does not keep the focus, or
     # ghosthand says Windows refused to hand it back.
     refused = "would not let ghosthand hand it back" in opened + returned
     assert refused or desk.win.info(desk.win.foreground()).app != "kazumi"

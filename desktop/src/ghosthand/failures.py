@@ -19,8 +19,11 @@ def plugin_version() -> str:
 
 
 def log_dir() -> Path:
-    # The desktop app runs an installed copy of the plugin, so plugin.json points this at the repo.
-    return Path(os.environ.get("GHOSTHAND_LOG_DIR") or PLUGIN_ROOT / "logs")
+    if override := os.environ.get("GHOSTHAND_LOG_DIR"):
+        return Path(override)
+    # Not under PLUGIN_ROOT: each installed version is its own copy in the plugin cache.
+    local = os.environ.get("LOCALAPPDATA") or Path.home() / "AppData" / "Local"
+    return Path(local) / "ghosthand" / "logs"
 
 
 def _now() -> str:

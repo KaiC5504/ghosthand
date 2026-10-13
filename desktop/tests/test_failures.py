@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from ghosthand.failures import FailureLog
+from ghosthand.failures import FailureLog, log_dir
 
 
 def records(log):
@@ -87,3 +87,14 @@ def test_an_unwritable_log_never_breaks_a_call_but_a_report_says_so(tmp_path, ca
     assert "could not write" in capsys.readouterr().err
     with pytest.raises(OSError):
         log.report("x", "y", "")
+
+
+def test_logs_go_next_to_the_test_chrome_profile_by_default(monkeypatch, tmp_path):
+    monkeypatch.delenv("GHOSTHAND_LOG_DIR", raising=False)
+    monkeypatch.setenv("LOCALAPPDATA", str(tmp_path))
+    assert log_dir() == tmp_path / "ghosthand" / "logs"
+
+
+def test_ghosthand_log_dir_overrides_the_default(monkeypatch, tmp_path):
+    monkeypatch.setenv("GHOSTHAND_LOG_DIR", str(tmp_path / "mine"))
+    assert log_dir() == tmp_path / "mine"

@@ -14,7 +14,7 @@ def choose(node: Node, requested: str = "auto") -> str:
                 return action
         raise GhostError(
             f'needs a real click: {node.ref} {node.info.role} "{node.info.name}" has no mouse-free action. '
-            "Take a screenshot and tell KaiC; ghosthand never moves the mouse."
+            "Take a screenshot and tell the user; ghosthand never moves the mouse."
         )
     if requested not in ALL_ACTIONS:
         raise GhostError(f'unknown action "{requested}"; use one of: auto, {", ".join(ALL_ACTIONS)}')

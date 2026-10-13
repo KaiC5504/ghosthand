@@ -1,6 +1,6 @@
 {
   "name": "ghosthand",
-  "description": "KaiC's mouse-free desktop and browser automation",
+  "description": "Mouse-free Windows app and browser automation for Claude Code",
   "owner": { "name": "KaiC5504" },
   "plugins": [
     {

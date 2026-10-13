@@ -7,7 +7,8 @@ ghosthand must do; this file says where the build ended up and why.
 ## Status
 
 - Public at https://github.com/KaiC5504/ghosthand (`main`). Installed as plugin
-  `ghosthand@ghosthand` version 0.1.2 (adds the failure log and `report_issue`).
+  `ghosthand@ghosthand` version 0.1.3 (the failure log moved to `%LOCALAPPDATA%`; tool text says
+  "the user" instead of KaiC, so it reads right for anyone who installs it).
 - Tests: 73 unit tests, 13 live-desktop tests, 2 cookie-export tests, 4 browser smoke checks — all
   passing on the final code.
 - Benchmark (measured just before the final review fixes): 14/14 runs, fastest tool on every task,
@@ -49,7 +50,7 @@ MCP servers inside `plugin.json` (a root `.mcp.json` is also loaded as a project
 
 ## Failure log
 
-`logs/failures.jsonl` (gitignored) is the first place to look when ghosthand misbehaved. One
+`%LOCALAPPDATA%\ghosthand\logs\failures.jsonl` is the first place to look when ghosthand misbehaved. One
 JSON record per line, newest at the bottom:
 
 - `"source": "ghosthand"`: a desktop tool call failed. `error` is what Claude was told;
@@ -60,11 +61,13 @@ JSON record per line, newest at the bottom:
   desktop calls before it, with their arguments, whether they worked, and how long they took.
 
 `set_text` is logged as `<N chars>`, never the text. The file rolls over to `failures.1.jsonl` at
-1 MB. The installed copy finds the repo through `GHOSTHAND_LOG_DIR` in `plugin.json`; if the repo
-moves, change it there. Playwright's own logs stay in `%LOCALAPPDATA%\ghosthand\playwright-out`.
+1 MB. It sits next to the test Chrome's profile, not in the plugin folder, because every installed
+version is its own copy in the plugin cache (until 0.1.2 it was this repo's `logs/`, through a path
+in `plugin.json` that only existed on KaiC's PC). Set `GHOSTHAND_LOG_DIR` to log somewhere else.
+Playwright's own logs stay in `%LOCALAPPDATA%\ghosthand\playwright-out`.
 
 A quick look in PowerShell:
-`Get-Content logs\failures.jsonl -Tail 5 | ForEach-Object { $_ | ConvertFrom-Json } | Format-List time, source, tool, error, what_happened`
+`Get-Content $env:LOCALAPPDATA\ghosthand\logs\failures.jsonl -Tail 5 | ForEach-Object { $_ | ConvertFrom-Json } | Format-List time, source, tool, error, what_happened`
 
 ## Things learned the hard way
 

@@ -109,6 +109,8 @@ and check again.
 | `screenshot` | A picture of one window, even when it is covered |
 | `report_issue` | Log a problem no error caught |
 
+Failed calls are logged to `%LOCALAPPDATA%\ghosthand\logs\failures.jsonl`.
+
 **ghosthand-browser**: Playwright MCP on a test Chrome with its own permanent profile in
 `%LOCALAPPDATA%\ghosthand\chrome-profile`. Log in once and it stays logged in. To copy a
 site's logins from your real Chrome, load [`cookie-export/`](cookie-export) as an unpacked

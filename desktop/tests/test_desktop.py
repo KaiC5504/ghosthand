@@ -199,7 +199,7 @@ def test_keys_go_in_the_background_but_combinations_need_permission():
     desk, win, *_ = setup()
     desk.keys("notepad", "tab enter")
     assert win.posted == [(EDITOR, parse_keys("tab enter"))]
-    with pytest.raises(GhostError, match="Ask KaiC"):
+    with pytest.raises(GhostError, match="Ask the user"):
         desk.keys("notepad", "ctrl+s")
     assert win.focused == []
     desk.keys("notepad", "ctrl+s", allow_focus=True)

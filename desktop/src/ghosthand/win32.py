@@ -199,7 +199,7 @@ class Win32:
 
     def send_keys_focused(self, hwnd: int, strokes: list[KeyStroke]) -> None:
         if not self.set_foreground(hwnd):
-            raise GhostError("Windows would not bring the window to the front; ask KaiC to click it once, then try again")
+            raise GhostError("Windows would not bring the window to the front; ask the user to click it once, then try again")
         events = []
         for stroke in strokes:
             events += [(vk, False, False) for vk in stroke.modifiers]
@@ -213,7 +213,7 @@ class Win32:
 
     def capture(self, hwnd: int) -> bytes:
         if user32.IsIconic(hwnd):
-            raise GhostError("the window is minimised; ask KaiC to restore it, then take the screenshot")
+            raise GhostError("the window is minimised; ask the user to restore it, then take the screenshot")
         rect = wintypes.RECT()
         user32.GetWindowRect(hwnd, ctypes.byref(rect))
         width, height = rect.right - rect.left, rect.bottom - rect.top

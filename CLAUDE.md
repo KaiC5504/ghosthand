@@ -59,8 +59,8 @@ session. Reinstalling the same version fails while a session still runs the old 
   (press → toggle → select → expand → default). With none, it raises "needs a real click". Never
   add a mouse fallback.
 - **Every mutating call** goes through `Desktop._guarded` (a window closing mid-call counts as
-  success), then `_hand_back` (return focus to KaiC's window if the controlled app stole it, but
-  never if KaiC switched apps himself), then `_after`, which returns the fresh read. `wait_for`
+  success), then `_hand_back` (return focus to the user's window if the controlled app stole it,
+  but never if the user switched apps themselves), then `_after`, which returns the fresh read. `wait_for`
   also waits until actionable elements stop moving (`_settled`, at most 1.5 s).
 - **Keys:** without `allow_focus` they are posted to the window's focused control and modifier
   combos are refused. `allow_focus=true` brings the window to the front.
@@ -81,7 +81,7 @@ the mouse was never used. The user's own mouse movement doesn't count.
 
 ## Conventions
 
-- Tool output and error text speak to Claude and refer to the user as KaiC.
+- Tool output and error text speak to Claude and call the person at the PC "the user".
 - Comments are sparse and explain why (often Windows/Flutter quirks). Keep that style.
 - Dependencies are pinned exactly (`pyproject.toml`, `@playwright/mcp@0.0.83`), and the server runs
   with `uv run --frozen`, so update `uv.lock` together with any dependency change.
