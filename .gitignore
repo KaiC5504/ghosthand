@@ -3,6 +3,7 @@ __pycache__/
 *.pyc
 node_modules/
 bench/out/
+logs/
 .playwright-mcp/
 # Logins: never commit these
 chrome-profile/

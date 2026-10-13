@@ -1,4 +1,5 @@
 import asyncio
+import json
 import subprocess
 import sys
 
@@ -8,6 +9,18 @@ from mcp.server.mcpserver.exceptions import ToolError
 
 from ghosthand import server
 from ghosthand.desktop import Desktop
+from ghosthand.failures import FailureLog
+
+
+@pytest.fixture(autouse=True)
+def failure_log(tmp_path, monkeypatch):
+    log = FailureLog(tmp_path, "test")
+    monkeypatch.setattr(server, "_log", log)
+    return log
+
+
+def logged(log):
+    return [json.loads(line) for line in log.path.read_text("utf-8").splitlines()]
 
 
 @pytest.fixture
@@ -22,9 +35,9 @@ def call(name, arguments):
     return asyncio.run(server.server.call_tool(name, arguments)).content
 
 
-def test_all_eight_tools_are_offered():
+def test_all_nine_tools_are_offered():
     names = {tool.name for tool in asyncio.run(server.server.list_tools())}
-    assert names == {"windows", "launch", "read", "act", "set_text", "keys", "wait_for", "screenshot"}
+    assert names == {"windows", "launch", "read", "act", "set_text", "keys", "wait_for", "screenshot", "report_issue"}
 
 
 def test_read_and_act_go_through_the_desktop(desktop):
@@ -43,7 +56,7 @@ def test_screenshot_is_a_png_image(desktop):
 
 
 def test_unexpected_failures_say_what_broke(desktop, monkeypatch):
-    def broken(*args):
+    def broken(*args, **kwargs):
         raise RuntimeError("the walker fell over")
 
     monkeypatch.setattr(desktop, "read", broken)
@@ -61,3 +74,32 @@ def test_real_server_starts_its_ui_thread_in_a_fresh_process():
 
 def test_window_numbers_can_be_sent_as_numbers(desktop):
     assert 'e2 button "Save"' in call("read", {"window": 100})[0].text
+
+
+def test_failed_calls_are_logged_after_the_calls_before_them(desktop, failure_log):
+    call("read", {"window": "notepad"})
+    with pytest.raises(ToolError):
+        asyncio.run(server.server.call_tool("act", {"ref": "e99"}))
+
+    [record] = logged(failure_log)
+    assert (record["tool"], record["args"]) == ("act", {"ref": "e99", "action": "auto"})
+    assert record["error"] == "unknown ref e99: read the window first"
+    assert [step["tool"] for step in record["recent"]] == ["read"]
+
+
+def test_internal_errors_are_logged_with_the_traceback(desktop, failure_log, monkeypatch):
+    def broken(*args, **kwargs):
+        raise RuntimeError("the walker fell over")
+
+    monkeypatch.setattr(desktop, "read", broken)
+    with pytest.raises(ToolError):
+        asyncio.run(server.server.call_tool("read", {"window": "notepad"}))
+
+    trace = logged(failure_log)[0]["traceback"]
+    assert "in broken" in trace and "RuntimeError: the walker fell over" in trace
+
+
+def test_report_issue_writes_an_ai_record(desktop, failure_log):
+    text = call("report_issue", {"what_happened": "act said done, page did not change", "expected": "detail page", "tool": "act"})[0].text
+    assert str(failure_log.path) in text
+    assert logged(failure_log)[0]["source"] == "ai"

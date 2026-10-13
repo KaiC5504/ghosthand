@@ -34,8 +34,10 @@ running the old copy, which is why the version goes up.)
 ## What Claude gets
 
 - **ghosthand** (desktop): `windows`, `launch`, `read`, `act`, `set_text`, `keys`, `wait_for`,
-  `screenshot`. Works on native apps (Win32, WinUI, Flutter such as Kazumi) and on the real
-  Chrome's own pages such as `chrome://extensions`.
+  `screenshot`, `report_issue`. Works on native apps (Win32, WinUI, Flutter such as Kazumi) and
+  on the real Chrome's own pages such as `chrome://extensions`.
+- **Failure log** (`logs/failures.jsonl`, gitignored): every failed ghosthand call, plus problems
+  Claude reports with `report_issue`, each with the ten calls before it. See the build notes.
 - **ghosthand-browser**: Playwright MCP 0.0.83 on a separate Chrome with its own permanent
   profile: console messages, network requests, JavaScript and page snapshots.
 - **docs/build-notes.md**: build status, what is left to do, how to ship a change, and the

@@ -6,7 +6,8 @@ ghosthand must do; this file says where the build ended up and why.
 
 ## Status
 
-- Merged to `main` (no remote). Installed as plugin `ghosthand@ghosthand` version 0.1.1.
+- Merged to `main` (no remote). Installed as plugin `ghosthand@ghosthand` version 0.1.2 (adds the
+  failure log and `report_issue`).
 - Tests: 73 unit tests, 13 live-desktop tests, 2 cookie-export tests, 4 browser smoke checks — all
   passing on the final code.
 - Benchmark (measured just before the final review fixes): 14/14 runs, fastest tool on every task,
@@ -45,6 +46,25 @@ server is using this folder's venv; run tests with `uv run --no-sync pytest` ins
 
 Do not add `--no-dev` to the server command (this folder's venv would lose pytest), and keep the
 MCP servers inside `plugin.json` (a root `.mcp.json` is also loaded as a project config here).
+
+## Failure log
+
+`logs/failures.jsonl` (gitignored) is the first place to look when ghosthand misbehaved. One
+JSON record per line, newest at the bottom:
+
+- `"source": "ghosthand"`: a desktop tool call failed. `error` is what Claude was told;
+  `traceback` is there for internal errors.
+- `"source": "ai"`: Claude called `report_issue` for something no error caught (an action that
+  said done but did nothing, a ghosthand-browser failure). `what_happened` and `expected` say what.
+- Every record has `time`, `version`, `session` (one per server start) and `recent`: the last ten
+  desktop calls before it, with their arguments, whether they worked, and how long they took.
+
+`set_text` is logged as `<N chars>`, never the text. The file rolls over to `failures.1.jsonl` at
+1 MB. The installed copy finds the repo through `GHOSTHAND_LOG_DIR` in `plugin.json`; if the repo
+moves, change it there. Playwright's own logs stay in `%LOCALAPPDATA%\ghosthand\playwright-out`.
+
+A quick look in PowerShell:
+`Get-Content logs\failures.jsonl -Tail 5 | ForEach-Object { $_ | ConvertFrom-Json } | Format-List time, source, tool, error, what_happened`
 
 ## Things learned the hard way
 

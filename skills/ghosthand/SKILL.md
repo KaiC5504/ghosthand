@@ -25,6 +25,16 @@ Two MCP servers come with this plugin:
 
 Refs stay valid while their element exists. `stale: … Read the window again` means the element changed or went away: read again and pick the new ref.
 
+## When something goes wrong
+
+Every ghosthand error is logged by itself to `D:\Repos\Tools\ghosthand\logs\failures.jsonl`. Call `report_issue(what_happened, expected, tool)` for the failures no error catches:
+
+- an `act`, `set_text` or `keys` said done, but the fresh read shows nothing changed or the wrong thing changed;
+- a ghosthand-browser call fails or misbehaves (paste its error into `what_happened`);
+- ghosthand hangs, is very slow, or you had to give up and tell KaiC.
+
+Report once per problem, then carry on. When asked to debug or fix ghosthand, read that log first.
+
 ## Hard rules
 
 - ghosthand never moves the mouse. On `needs a real click`, take a `screenshot`, show KaiC, and say what needs clicking.
