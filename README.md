@@ -1,53 +1,66 @@
 # ghosthand
 
-Mouse-free control of Windows apps and a DevTools test Chrome, as one Claude Code plugin.
-It reads one window at a time through Windows UI Automation, gives every element a short
-ref, and uses apps only through accessibility actions — it never moves your mouse, so you
-can keep working while Claude drives.
+**Let Claude Code use your Windows apps without touching your mouse.**
 
-## Install
+ghosthand reads apps through Windows UI Automation and presses buttons through accessibility
+actions, not by moving the cursor. You keep using your PC while Claude works.
 
-```bash
-claude plugin marketplace add D:/Repos/Tools/ghosthand
-claude plugin install ghosthand@ghosthand
-uv --directory D:/Repos/Tools/ghosthand/desktop sync --frozen
-claude mcp list
-```
+It is a Claude Code plugin with two MCP servers:
 
-`plugin:ghosthand:ghosthand` and `plugin:ghosthand:ghosthand-browser` should both show
-`✔ Connected`. The test Chrome keeps its profile in `%LOCALAPPDATA%\ghosthand\chrome-profile`
-and its logs, snapshots and downloads in `%LOCALAPPDATA%\ghosthand\playwright-out`.
+- **ghosthand**: native Windows apps (Win32, WinUI, Flutter) and Chrome's own pages
+  such as `chrome://extensions`.
+- **ghosthand-browser**: a separate test Chrome with console, network and JavaScript access,
+  through Microsoft's [Playwright MCP](https://github.com/microsoft/playwright-mcp).
 
-### After changing the code
+## Why it's better
 
-The terminal `claude` runs the plugin straight from this repo, but the desktop app runs the
-copy made at install time in `~/.claude/plugins/cache/ghosthand/ghosthand/<version>`. To ship a
-change to both, bump `version` in `.claude-plugin/plugin.json`, commit, then:
+Same scripted tasks, run against three popular Windows automation tools:
+[Windows-MCP](https://github.com/CursorTouch/Windows-MCP),
+[Terminator](https://github.com/mediar-ai/terminator) and
+[Orca](https://github.com/stablyai/orca)'s computer use.
 
-```bash
-claude plugin install ghosthand@ghosthand
-```
+| | ghosthand | Orca | Windows-MCP | Terminator |
+|---|---|---|---|---|
+| Tasks finished | **14/14** | 10/14 | 9/14 | 11/14 |
+| Fastest | **on all 4 tasks** | | | |
+| Moves your mouse | **never** | never | on every click | briefly, then puts it back |
 
-and start a new session. (Reinstalling the same version fails while any open session is still
-running the old copy, which is why the version goes up.)
+Per task (runs finished, median time):
 
-## What Claude gets
+| Task | ghosthand | Orca | Windows-MCP | Terminator |
+|---|---|---|---|---|
+| Calculator: 7 × 6 = | **5/5 · 1.1 s** | 5/5 · 5.3 s | 5/5 · 3.1 s ¹ | 5/5 · 5.6 s |
+| Kazumi (a Flutter app): open a show, go back | **3/3 · 2.9 s** | 0/3 | 3/3 · 3.3 s | 3/3 · 10.0 s |
+| Chrome: reload an extension on `chrome://extensions` | **3/3 · 1.0 s** | 3/3 · 8.6 s | 0/3 | 0/3 |
+| Chrome: open an extension's panel on bilibili.com | **3/3 · 2.7 s** | 2/3 · 7.6 s | 1/3 · 8.1 s | 3/3 · 8.7 s |
 
-- **ghosthand** (desktop): `windows`, `launch`, `read`, `act`, `set_text`, `keys`, `wait_for`,
-  `screenshot`, `report_issue`. Works on native apps (Win32, WinUI, Flutter such as Kazumi) and
-  on the real Chrome's own pages such as `chrome://extensions`.
-- **Failure log** (`logs/failures.jsonl`, gitignored): every failed ghosthand call, plus problems
-  Claude reports with `report_issue`, each with the ten calls before it. See the build notes.
-- **ghosthand-browser**: Playwright MCP 0.0.83 on a separate Chrome with its own permanent
-  profile: console messages, network requests, JavaScript and page snapshots.
-- **docs/build-notes.md**: build status, what is left to do, how to ship a change, and the
-  decisions made while building.
-- **skills/ghosthand**: tells Claude which one to use, the read → act → wait_for loop, and the
-  hard rules (never the mouse; ask before bringing a window to the front).
-- **cookie-export/**: load it unpacked in your real Chrome to copy a site's logins into the
-  test Chrome. Claude imports the file without ever seeing a cookie value, then deletes it.
+¹ Windows-MCP pressed the buttons but could not read the result back.
 
-A read looks like this:
+What makes the difference:
+
+- **It never touches your mouse or keyboard.** Every action is an accessibility action (press,
+  toggle, select, expand). If an element has none, ghosthand says "needs a real click" instead
+  of grabbing the mouse. The tests count software mouse input during every run: always zero.
+- **It doesn't steal your focus.** Keys go to the app in the background. If an app pulls itself
+  to the front, ghosthand hands focus back to the window you were using.
+- **It sees inside Flutter apps.** Orca saw nothing inside Kazumi. ghosthand uses the COM UI
+  Automation client, which can, and keeps stable refs for elements that have no runtime id.
+- **It doesn't hang on Chrome.** A Chrome tooltip makes the UI tree point back at itself.
+  Windows-MCP recursed until it crashed and Terminator walked 200 levels deep. ghosthand caps
+  every read at 64 levels and 2000 elements.
+- **Every action proves itself.** Each action returns the window's fresh state, so Claude sees
+  whether it worked without another call.
+- **Refs stay put.** An element keeps its ref (`e12`) when the page changes. Orca's indexes
+  shift after every change, and Windows-MCP clicks screen coordinates, which miss when a page
+  moves while loading.
+
+To be fair: the benchmark is small (4 tasks, 3 to 5 runs each, one PC) and was written
+alongside ghosthand, which was designed after seeing where the other tools failed on these
+same tasks. Its runs were measured just before its final review fixes; the live tests pass on
+the final code. Versions tested: Windows-MCP 0.7.2, Terminator 0.24.28, Orca 1.4.221. The
+scripts and raw results are in [`bench/`](bench) so you can run it yourself.
+
+## What Claude sees
 
 ```
 window 8849636 "Kazumi" (kazumi)
@@ -56,84 +69,76 @@ window 8849636 "Kazumi" (kazumi)
   e50 button @1416,809 [press]
 ```
 
-## Tests
+One line per element. Claude calls `act` on `e21` and gets the window's new state back.
+
+## Install
+
+You need Windows 10 or 11, [Claude Code](https://github.com/anthropics/claude-code),
+[uv](https://docs.astral.sh/uv/), [Node.js](https://nodejs.org/) and Google Chrome.
+
+```bash
+claude plugin marketplace add KaiC5504/ghosthand
+```
+
+```bash
+claude plugin install ghosthand@ghosthand
+```
+
+Start a new Claude Code session, then check that both servers show `✔ Connected`:
+
+```bash
+claude mcp list
+```
+
+The first start downloads ghosthand's Python packages. If it shows as failed, wait a moment
+and check again.
+
+## Tools
+
+**ghosthand** (desktop)
+
+| Tool | What it does |
+|---|---|
+| `windows` | List open windows and which one is in front |
+| `launch` | Start an app and read its window |
+| `read` | Read one window, one line per element |
+| `act` | Use an element: press, toggle, select, expand |
+| `set_text` | Put text straight into a field |
+| `keys` | Send keys in the background (`enter`, `tab`, `f5`) |
+| `wait_for` | Wait until text appears or disappears |
+| `screenshot` | A picture of one window, even when it is covered |
+| `report_issue` | Log a problem no error caught |
+
+**ghosthand-browser**: Playwright MCP on a test Chrome with its own permanent profile in
+`%LOCALAPPDATA%\ghosthand\chrome-profile`. Log in once and it stays logged in. To copy a
+site's logins from your real Chrome, load [`cookie-export/`](cookie-export) as an unpacked
+extension.
+
+The plugin also installs a skill that teaches Claude which server to use and the rules
+(never the mouse; ask before bringing a window to the front).
+
+## Limits
+
+- An element with no accessibility action can't be used. ghosthand says so and never falls back
+  to the mouse.
+- Key combinations like `ctrl+s` need the window in front, so Claude asks you first.
+- If an app ignores background keys, ghosthand can't tell from outside. The fresh read after
+  `keys` shows whether they landed.
+- A read stops at 2000 elements or 64 levels. Reading again with a ref walks that part with its
+  own budget.
+
+## Development
 
 ```bash
 cd desktop
 uv run pytest            # unit tests, no real apps
-uv run pytest -m real    # live desktop: Calculator, Kazumi, two test Chrome windows
-cd ../cookie-export && node --test
-cd ../scripts && npm install && node browser-smoke.mjs
+uv run pytest -m real    # live tests: opens Calculator, Kazumi and test Chrome windows
 ```
 
-The live tests open Calculator and their own Chrome windows, open a Kazumi card and come
-back, and reload BTR on `chrome://extensions`. Keep using your PC while they run: the mouse
-check counts only input injected by software, not your own hand.
+[`docs/build-notes.md`](docs/build-notes.md) has the build status, how to ship a change, and
+the reasons behind the non-obvious code. The design spec is in
+[`docs/superpowers/specs`](docs/superpowers/specs).
 
-## Benchmark
+## License
 
-`bench/` is the 2026-10-12 comparison of Orca, Windows-MCP and Terminator with ghosthand
-(`gh`) added: same scripted tasks, tool calls only, no model thinking time.
-
-```bash
-cd bench && npm install
-node bench.mjs <calc|kazumi|ext|bili> <runs> [tool]
-node summarize.mjs results/2026-10-12 results/2026-10-13
-```
-
-Results (`results/2026-10-13` is ghosthand, run on 2026-10-13):
-
-```
-== calc
-orca  done 5/5 self-verified 5/5 median 5.3s  cursor-moved 0/5
-wmcp  done 5/5 self-verified 0/5 median 3.1s  cursor-moved 5/5
-term  done 5/5 self-verified 5/5 median 5.6s  cursor-moved 0/5
-gh    done 5/5 self-verified 5/5 median 1.1s  cursor-moved 0/5 injected 0/5
-
-== kazumi
-orca  done 0/3 self-verified 0/3 median 0.4s  cursor-moved 0/3
-wmcp  done 3/3 self-verified 3/3 median 3.3s  cursor-moved 3/3
-term  done 3/3 self-verified 3/3 median 10.0s cursor-moved 0/3
-gh    done 3/3 self-verified 3/3 median 2.9s  cursor-moved 0/3 injected 0/3
-
-== ext (reload BTR on chrome://extensions)
-orca  done 3/3 self-verified 3/3 median 8.6s  cursor-moved 0/3
-wmcp  done 0/3 self-verified 0/3 median 34.2s cursor-moved 3/3
-term  done 0/3 self-verified 0/3 median 31.6s cursor-moved 0/3
-gh    done 3/3 self-verified 3/3 median 1.0s  cursor-moved 0/3 injected 0/3
-
-== bili (open BTR's panel on bilibili.com)
-orca  done 2/3 self-verified 2/3 median 7.6s  cursor-moved 0/3
-wmcp  done 1/3 self-verified 1/3 median 8.1s  cursor-moved 3/3
-term  done 3/3 self-verified 3/3 median 8.7s  cursor-moved 0/3
-gh    done 3/3 self-verified 3/3 median 2.7s  cursor-moved 0/3 injected 0/3
-```
-
-ghosthand: 14/14, fastest on every task, never touched the mouse. "injected" counts mouse
-input sent by software during a run (the 2026-10-12 runs predate that counter). Kazumi pulls
-itself to the front when used; ghosthand hands focus back each time, which is why its Kazumi
-rows show focus changes.
-
-## Known limits
-
-- Apps that offer no accessibility action for an element get "needs a real click";
-  ghosthand never falls back to the mouse.
-- Key combinations (ctrl+s) need the window in front: Claude asks before doing that.
-- Some apps pull themselves to the front when used; ghosthand hands focus back, and says so
-  when Windows refuses (seen once, right after Kazumi restored itself from minimised). If you
-  switched to another app yourself during an action, it leaves you there.
-- Background keys go to the window's focused control. An app that ignores them cannot be
-  detected from outside; the fresh read after `keys` shows whether they landed.
-- `wait_for` waits until the page stops moving, up to 1.5 s more on a page that never does
-  (an always-running animation).
-- Elements without a runtime id (Flutter) are known by a fingerprint. When only their
-  wrappers change, a ref moves to an identical element of the same size at the same spot that
-  was never on screen with it, and only from the window's previous read; anything less certain
-  is refused as stale.
-- A read stops at 2000 elements or 64 levels; reading again with a ref walks that part with its
-  own 2000-element budget.
-- The server takes about 1.3 s to start; 1 s of that is the MCP Python SDK loading.
-- The installed copy includes this folder's venv and `node_modules` (about 110 MB per version);
-  old version folders in the plugin cache can be deleted once no session uses them.
-- The benchmark table above was measured before the final review fixes (focus, keys, subtree
-  reads, rebinding); the live tests passed on the final code.
+[MIT](LICENSE)

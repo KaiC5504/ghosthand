@@ -6,8 +6,8 @@ ghosthand must do; this file says where the build ended up and why.
 
 ## Status
 
-- Merged to `main` (no remote). Installed as plugin `ghosthand@ghosthand` version 0.1.2 (adds the
-  failure log and `report_issue`).
+- Public at https://github.com/KaiC5504/ghosthand (`main`). Installed as plugin
+  `ghosthand@ghosthand` version 0.1.2 (adds the failure log and `report_issue`).
 - Tests: 73 unit tests, 13 live-desktop tests, 2 cookie-export tests, 4 browser smoke checks — all
   passing on the final code.
 - Benchmark (measured just before the final review fixes): 14/14 runs, fastest tool on every task,
