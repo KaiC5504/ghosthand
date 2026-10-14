@@ -7,9 +7,9 @@ ghosthand must do; this file says where the build ended up and why.
 ## Status
 
 - Public at https://github.com/KaiC5504/ghosthand (`main`). Installed as plugin
-  `ghosthand@ghosthand` version 0.1.4 (actions return the page once it stops moving; a read says
-  when part of the window did not answer).
-- Tests: 89 unit tests, 13 live-desktop tests, 2 cookie-export tests, 4 browser smoke checks — all
+  `ghosthand@ghosthand` version 0.1.5 (the server loads its UI Automation backend at start, so a
+  server still running while this repo is updated keeps the code it started with).
+- Tests: 90 unit tests, 13 live-desktop tests, 2 cookie-export tests, 4 browser smoke checks — all
   passing on the final code.
 - Benchmark (measured just before the final review fixes): 14/14 runs, fastest tool on every task,
   zero mouse input. See the README.
