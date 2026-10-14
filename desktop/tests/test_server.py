@@ -72,6 +72,18 @@ def test_real_server_starts_its_ui_thread_in_a_fresh_process():
     assert result.returncode == 0, result.stderr[-800:]
 
 
+def test_the_server_loads_its_backend_at_start():
+    # Loaded lazily, a server started before a repo update imported the new uia.py on its first
+    # call against the old model.py it already held, and every call failed with an ImportError.
+    code = (
+        "import sys; from ghosthand import server; server.server.run = lambda transport: None; "
+        "server.main(); server._uia_thread.submit(lambda: None).result(); "
+        "print('ghosthand.uia' in sys.modules and server._desktop is not None)"
+    )
+    result = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, encoding="utf-8", timeout=60)
+    assert result.stdout.strip() == "True", result.stderr[-800:]
+
+
 def test_window_numbers_can_be_sent_as_numbers(desktop):
     assert 'e2 button "Save"' in call("read", {"window": 100})[0].text
 

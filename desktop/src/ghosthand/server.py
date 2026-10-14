@@ -48,12 +48,16 @@ def _make_desktop() -> Desktop:
     return Desktop(UiaBackend(), Win32())
 
 
+def _ensure_desktop() -> Desktop:
+    global _desktop
+    if _desktop is None:
+        _desktop = _make_desktop()
+    return _desktop
+
+
 async def _call(method: str, **args):
     def work():
-        global _desktop
-        if _desktop is None:
-            _desktop = _make_desktop()
-        return getattr(_desktop, method)(**args)
+        return getattr(_ensure_desktop(), method)(**args)
 
     started = time.perf_counter()
     try:
@@ -139,4 +143,7 @@ async def report_issue(what_happened: str, expected: str, tool: str = "") -> str
 def main() -> None:
     # Physical pixels everywhere, so element positions and screenshots match the screen.
     ctypes.windll.user32.SetProcessDpiAwarenessContext(ctypes.c_void_p(-4))
+    # Load the backend now: loaded on first use, a server started before a repo update mixed the
+    # new uia.py with the old model.py it already held. A failure here is retried on that call.
+    _uia_thread.submit(_ensure_desktop)
     server.run("stdio")
