@@ -16,7 +16,7 @@ Python lives in `desktop/` (uv, Python 3.14, pytest).
 ```bash
 cd desktop
 uv run pytest                                   # unit tests on fakes; "real" tests are excluded by addopts
-uv run pytest -m real                           # live desktop: opens Calculator, Kazumi, test Chrome windows
+uv run pytest -m real                           # live desktop: opens Calculator, Kazumi, Chrome windows, closes the ones it opened
 uv run pytest tests/test_desktop.py::test_windows_lists_and_marks_the_front_one
 uv run --no-sync pytest                         # when uv can't remove ghosthand.exe (another session's server holds the venv)
 cd ../cookie-export && node --test

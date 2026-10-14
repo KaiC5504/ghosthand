@@ -133,6 +133,7 @@ def test_calculator_without_the_mouse(desk):
 
 
 def test_kazumi_open_a_card_and_go_back(desk):
+    was_in_front = desk.win.info(desk.win.foreground()).app == "kazumi"
     with MouseWatch() as mouse:
         if not any(row.app == "kazumi" for row in desk.win.list_windows()):
             desk.launch(KAZUMI)
@@ -147,9 +148,9 @@ def test_kazumi_open_a_card_and_go_back(desk):
         assert title in desk.wait_for("kazumi", title)
     mouse.assert_untouched()
     # The user may switch windows themselves meanwhile. The promise: Kazumi does not keep the focus, or
-    # ghosthand says Windows refused to hand it back.
+    # ghosthand says Windows refused to hand it back. A Kazumi already in front stays there.
     refused = "would not let ghosthand hand it back" in opened + returned
-    assert refused or desk.win.info(desk.win.foreground()).app != "kazumi"
+    assert was_in_front or refused or desk.win.info(desk.win.foreground()).app != "kazumi"
     assert any(row.app == "kazumi" for row in desk.win.list_windows())
 
 
