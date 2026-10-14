@@ -1,6 +1,6 @@
 from dataclasses import replace
 
-from ghosthand.model import ElementInfo, WindowInfo
+from ghosthand.model import ElementInfo, Unanswered, WindowInfo
 
 
 class FakeElement:
@@ -10,6 +10,7 @@ class FakeElement:
         self.settable = settable
         self.performed = []
         self.on_perform = None
+        self.fails = None
 
     def add(self, *kids):
         self.children.extend(kids)
@@ -27,6 +28,8 @@ class FakeBackend:
         return element.data
 
     def children(self, element):
+        if element.fails:
+            raise Unanswered(list(element.children), element.fails)
         return list(element.children)
 
     def perform(self, element, action):

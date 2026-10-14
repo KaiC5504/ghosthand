@@ -60,8 +60,8 @@ session. Reinstalling the same version fails while a session still runs the old 
   add a mouse fallback.
 - **Every mutating call** goes through `Desktop._guarded` (a window closing mid-call counts as
   success), then `_hand_back` (return focus to the user's window if the controlled app stole it,
-  but never if the user switched apps themselves), then `_after`, which returns the fresh read. `wait_for`
-  also waits until actionable elements stop moving (`_settled`, at most 1.5 s).
+  but never if the user switched apps themselves), then `_after`, which returns the fresh read once actionable elements stop moving (`_settled`, at
+  most 1.5 s; `wait_for` settles the same way).
 - **Keys:** without `allow_focus` they are posted to the window's focused control and modifier
   combos are refused. `allow_focus=true` brings the window to the front.
 

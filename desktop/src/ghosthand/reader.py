@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from ghosthand.model import Backend, GhostError, Node, Snapshot
+from ghosthand.model import Backend, GhostError, Node, Snapshot, Unanswered
 
 MAX_DEPTH = 64
 MAX_NODES = 2000
@@ -15,7 +15,11 @@ def walk(backend: Backend, root: object, *, max_depth: int = MAX_DEPTH, max_node
     pending = [top]
     while pending:
         node = pending.pop()
-        handles = backend.children(node.handle)
+        try:
+            handles = backend.children(node.handle)
+        except Unanswered as error:
+            handles = error.kids
+            node.unanswered = error.code
         if handles and node.depth >= max_depth:
             truncated = True
             continue
@@ -108,6 +112,15 @@ def render(snapshot: Snapshot, *, query: str | None = None, subtree: str | None 
                 depth += 1
                 lines.append(line(node, depth))
             level[id(node)] = depth
+    failed = next((node for node in nodes if node.unanswered), None)
+    if failed:
+        # Flutter's Windows bridge can break (flutter/flutter#175041) and then hand out a near-empty
+        # tree; without this note the read looks like a page that really is empty.
+        lines.append(
+            f"(part of the window did not answer ({failed.unanswered}), so this read may be missing elements. "
+            "If it was changing, read again; if the read stays emptier than a screenshot, the app's "
+            "accessibility tree is broken and restarting the app fixes it)"
+        )
     if snapshot.truncated:
         lines.append(f"(read stopped early: over {MAX_NODES} elements or {MAX_DEPTH} levels; read again with one of the refs above to see that part in full)")
     return "\n".join(lines)

@@ -8,6 +8,15 @@ class GhostError(Exception):
     """A failure whose message tells Claude what happened and what to do next."""
 
 
+class Unanswered(Exception):
+    """The app failed while listing an element's children; kids are the ones it gave before that."""
+
+    def __init__(self, kids: list[object], code: str):
+        super().__init__(code)
+        self.kids = kids
+        self.code = code
+
+
 @dataclass(frozen=True)
 class ElementInfo:
     role: str
@@ -29,6 +38,7 @@ class Node:
     children: list[Node] = field(default_factory=list)
     key: tuple = ()
     ref: str = ""
+    unanswered: str = ""
 
 
 @dataclass(eq=False)

@@ -373,3 +373,19 @@ def test_subtree_read_reaches_past_the_cap_of_a_whole_window_read():
     assert "read stopped early" in whole and '"row 49"' not in whole
     part = desk.read("huge", ref=ref_of(whole, "Feed"))
     assert '"row 49"' in part and "read stopped early" not in part
+
+
+def test_act_returns_the_page_once_it_stops_moving():
+    desk, window, wrapper, back = flutter_detail_page()
+    ref = back_ref(desk.read("kazumi"))
+    heights = iter([99, 70, 45, 40])
+    moving = []
+
+    def slide(seconds):
+        if moving:
+            y = next(heights, 40)
+            back.data = replace(back.data, rect=(328, y, 384, y + 56))
+
+    desk.sleep = slide
+    back.on_perform = lambda action: moving.append(True)
+    assert "button @328,40" in desk.act(ref)

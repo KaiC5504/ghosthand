@@ -195,7 +195,7 @@ class Desktop:
             headline += f" ({note})"
         if not self.win.is_window(hwnd):
             return f"{headline}; the window closed"
-        return f"{headline}\n{render(self.snapshot(hwnd))}"
+        return f"{headline}\n{render(self._settled(hwnd, self.snapshot(hwnd), lambda snapshot: True))}"
 
 
 def _layout(snapshot: Snapshot) -> list[tuple]:

@@ -64,3 +64,16 @@ def test_unknown_subtree_ref_is_stale():
 def test_cut_short_read_says_so():
     window = FakeElement("window", "Huge", rid=(1,)).add(*[FakeElement("text", f"row {i}", rid=(3, i)) for i in range(MAX_NODES + 1)])
     assert render(snapshot_of(window)).endswith("read again with one of the refs above to see that part in full)")
+
+
+def test_render_says_when_part_of_the_window_did_not_answer():
+    pane = FakeElement("pane", rid=(2,)).add(FakeElement("button", "Save", rid=(3,), actions=("press",)))
+    pane.fails = "0x80040201"
+    text = render(snapshot_of(FakeElement("window", "Kazumi", rid=(1,)).add(pane)))
+    assert 'e3 button "Save" [press]' in text
+    assert "did not answer (0x80040201)" in text and "screenshot" in text
+
+
+def test_render_of_a_whole_answer_has_no_warning():
+    window = FakeElement("window", "Editor", rid=(1,)).add(FakeElement("text", "Ready", rid=(2,)))
+    assert "did not answer" not in render(snapshot_of(window))

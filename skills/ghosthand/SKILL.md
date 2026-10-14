@@ -21,7 +21,10 @@ Two MCP servers come with this plugin:
 2. `act` on a ref (or `set_text` for fields). Each action returns the window's fresh state — read that instead of calling `read` again.
 3. Use `wait_for` for anything that loads or animates. Never sleep.
    `keys` cannot tell whether the app took them: check the fresh read it returns.
+   Flutter apps such as Kazumi ignore a background `escape` on popup menus: press the button that opened the menu again.
 4. Confirm the outcome from the tool's own output before saying something worked.
+
+A read ending in `(part of the window did not answer …)` may be missing elements. If a second read is still emptier than a `screenshot`, the app's accessibility tree is broken (common in Flutter apps): tell the user and restart the app.
 
 Refs stay valid while their element exists. `stale: … Read the window again` means the element changed or went away: read again and pick the new ref.
 

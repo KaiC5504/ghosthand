@@ -7,9 +7,9 @@ ghosthand must do; this file says where the build ended up and why.
 ## Status
 
 - Public at https://github.com/KaiC5504/ghosthand (`main`). Installed as plugin
-  `ghosthand@ghosthand` version 0.1.3 (the failure log moved to `%LOCALAPPDATA%`; tool text says
-  "the user" instead of KaiC, so it reads right for anyone who installs it).
-- Tests: 73 unit tests, 13 live-desktop tests, 2 cookie-export tests, 4 browser smoke checks — all
+  `ghosthand@ghosthand` version 0.1.4 (actions return the page once it stops moving; a read says
+  when part of the window did not answer).
+- Tests: 89 unit tests, 13 live-desktop tests, 2 cookie-export tests, 4 browser smoke checks — all
   passing on the final code.
 - Benchmark (measured just before the final review fixes): 14/14 runs, fastest tool on every task,
   zero mouse input. See the README.
@@ -88,6 +88,15 @@ A quick look in PowerShell:
   the window's focused control.
 - **After Kazumi restores itself from minimised, Windows may name its inner `FLUTTERVIEW` as the
   foreground window**, and once refused to hand focus back. ghosthand reports this when it happens.
+- **An action's fresh read can catch the page mid-animation** (2026-10-15 log: Kazumi's popup menu
+  closing re-wrapped the page, so the 关闭 ref in `act`'s result was stale on the next call). `act`,
+  `set_text`, `keys` and `launch` now settle like `wait_for` before returning.
+- **Flutter's Windows accessibility bridge can break mid-session** ([flutter/flutter#175041](https://github.com/flutter/flutter/issues/175041)), after
+  which reads come back frozen or nearly empty (2026-10-15: only the title bar, after a 9-minute
+  super-resolution bake). The walk used to swallow the COM error silently; it now ends the read
+  with "part of the window did not answer (<hresult>)". Restarting the app fixes the tree.
+- **Flutter popup menus ignore a background `escape`**, even with a healthy tree. Pressing the
+  menu's own button again closes it.
 - **Playwright MCP writes logs and snapshots into the session's working directory** unless given
   `--output-dir`; it now writes to `%LOCALAPPDATA%\ghosthand\playwright-out`.
 
@@ -115,6 +124,10 @@ Each with what it costs if it turns out wrong.
    relying on whatever is in front.
 10. The cookie exporter was not installed for KaiC: granting site permission in his real Chrome is
     his call.
+11. Every action settles its fresh read (0.15 s more on a still page, up to 1.5 s while it moves).
+    Cheaper than a stale ref costing Claude another read; if actions feel slow, this is why.
+12. A failed child listing is reported as a note, not an error, since elements also vanish
+    mid-animation; the note can therefore show up on a page that was only changing.
 
 ## Open items (small, deferred)
 
