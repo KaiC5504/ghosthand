@@ -37,6 +37,13 @@ class ElementInfo:
     value: str | None = None
 
 
+@dataclass(frozen=True)
+class FieldState:
+    focused: bool
+    value: str | None
+    password: bool = False
+
+
 @dataclass(eq=False)
 class Node:
     info: ElementInfo
@@ -81,3 +88,5 @@ class Backend(Protocol):
     def children(self, element: object) -> list[object]: ...
     def perform(self, element: object, action: str) -> None: ...
     def set_value(self, element: object, text: str) -> bool: ...
+    def field_state(self, element: object) -> FieldState: ...
+    def focus(self, element: object) -> None: ...

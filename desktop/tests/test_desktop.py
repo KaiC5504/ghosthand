@@ -195,6 +195,62 @@ def test_set_text_on_a_field_without_direct_text_input():
         desk.set_text(ref_of(desk.read("notepad"), "Save"), "x")
 
 
+def flutter_field(value="", password=False):
+    # Like Kazumi's and BiliFast's fields: no direct text, focused by a tap, typed into through the window.
+    field = FakeElement("edit", "搜索番剧名称", rid=(5, 1), actions=("default",), value=value, refuses_text=0x80004005, password=password)
+    window = FakeElement("window", "Kazumi", rid=(5,)).add(field)
+    win = FakeWin(window_info(500, "Kazumi", "kazumi"))
+    field.on_perform = lambda action: setattr(field, "focused", True)
+    win.on_text = lambda text: setattr(field, "data", replace(field.data, value=(field.data.value or "") + text))
+
+    def keys(strokes):
+        for stroke in strokes:
+            if stroke.vk == 0x08:
+                field.data = replace(field.data, value=(field.data.value or "")[:-1])
+
+    win.on_keys = keys
+    return Desktop(FakeBackend({500: window}), win, sleep=lambda seconds: None), win, field
+
+
+def test_set_text_types_when_the_app_refuses_direct_text():
+    desk, win, field = flutter_field(value="old")
+    ref = ref_of(desk.read("kazumi"), "搜索番剧名称")
+    out = desk.set_text(ref, "冰菓/x😀")
+    assert field.data.value == "冰菓/x😀"
+    assert field.performed == ["default"]
+    assert out.startswith(f"text typed into {ref} (the app refused direct text)")
+
+
+def test_set_text_types_into_an_edit_without_a_value_pattern():
+    desk, win, field = flutter_field()
+    field.refuses_text, field.settable = None, False
+    desk.set_text(ref_of(desk.read("kazumi"), "搜索番剧名称"), "ab")
+    assert field.data.value == "ab"
+
+
+def test_set_text_types_nothing_when_the_field_will_not_take_focus():
+    desk, win, field = flutter_field()
+    field.on_perform = None
+    with pytest.raises(GhostError, match="would not take keyboard focus without the mouse, so ghosthand typed nothing"):
+        desk.set_text(ref_of(desk.read("kazumi"), "搜索番剧名称"), "ab")
+    assert win.texts == []
+
+
+def test_set_text_reports_what_the_field_holds_when_typing_went_wrong():
+    desk, win, field = flutter_field()
+    win.on_text = lambda text: setattr(field, "data", replace(field.data, value=text[:1]))
+    with pytest.raises(GhostError, match='now holds "冰" instead'):
+        desk.set_text(ref_of(desk.read("kazumi"), "搜索番剧名称"), "冰菓")
+
+
+def test_set_text_never_echoes_a_password_back():
+    desk, win, field = flutter_field(password=True)
+    win.on_text = lambda text: setattr(field, "data", replace(field.data, value="•"))
+    with pytest.raises(GhostError) as error:
+        desk.set_text(ref_of(desk.read("kazumi"), "搜索番剧名称"), "hunter22")
+    assert "hunter22" not in str(error.value) and "•" not in str(error.value)
+
+
 def test_keys_go_in_the_background_but_combinations_need_permission():
     desk, win, *_ = setup()
     desk.keys("notepad", "tab enter")

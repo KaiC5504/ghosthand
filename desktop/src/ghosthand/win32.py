@@ -9,7 +9,7 @@ from pathlib import Path
 
 from PIL import Image
 
-from ghosthand.keys import KeyStroke, key_lparam
+from ghosthand.keys import KeyStroke, key_lparam, utf16_units
 from ghosthand.model import GhostError, WindowInfo
 
 user32 = ctypes.WinDLL("user32", use_last_error=True)
@@ -59,7 +59,7 @@ gdi32.DeleteObject.argtypes = [wintypes.HGDIOBJ]
 gdi32.DeleteDC.argtypes = [wintypes.HDC]
 dwmapi.DwmGetWindowAttribute.argtypes = [wintypes.HWND, wintypes.DWORD, ctypes.c_void_p, wintypes.DWORD]
 
-WM_KEYDOWN, WM_KEYUP = 0x0100, 0x0101
+WM_KEYDOWN, WM_KEYUP, WM_CHAR = 0x0100, 0x0101, 0x0102
 GA_ROOT = 2
 DWMWA_CLOAKED = 14
 PW_RENDERFULLCONTENT = 2
@@ -196,6 +196,12 @@ class Win32:
             scan = user32.MapVirtualKeyW(stroke.vk, 0)
             user32.PostMessageW(target, WM_KEYDOWN, stroke.vk, key_lparam(scan, stroke.extended, up=False))
             user32.PostMessageW(target, WM_KEYUP, stroke.vk, key_lparam(scan, stroke.extended, up=True))
+
+    def post_text(self, hwnd: int, text: str) -> None:
+        target = _focused_child(hwnd)
+        # Characters outside the BMP go as their two surrogate halves, which Windows and Flutter rejoin.
+        for unit in utf16_units(text):
+            user32.PostMessageW(target, WM_CHAR, unit, 1)
 
     def send_keys_focused(self, hwnd: int, strokes: list[KeyStroke]) -> None:
         if not self.set_foreground(hwnd):

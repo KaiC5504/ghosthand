@@ -154,6 +154,23 @@ def test_kazumi_open_a_card_and_go_back(desk):
     assert any(row.app == "kazumi" for row in desk.win.list_windows())
 
 
+def test_kazumi_set_text_types_into_the_search_field(desk):
+    with MouseWatch() as mouse:
+        if not any(row.app == "kazumi" for row in desk.win.list_windows()):
+            desk.launch(KAZUMI)
+        home = desk.wait_for("kazumi", "热门番组")
+        desk.act(refs(home, r"^e\d+ button @")[0])
+        search = desk.wait_for("kazumi", "最近搜索")
+        typed = desk.set_text(refs(search, r"^e\d+ edit\b")[0], "冰菓/x😀")
+        assert re.search(r'edit\b.*= "冰菓/x😀"', typed), typed
+        again = desk.set_text(refs(typed, r"^e\d+ edit\b")[0], "ab")
+        assert re.search(r'edit\b.*= "ab"', again), again
+        unnamed = [re.match(r"^(e\d+) button @(-?\d+),(-?\d+)", row.strip()) for row in again.splitlines()]
+        desk.act(min((match for match in unnamed if match), key=lambda match: int(match[2]) + int(match[3]))[1])
+        desk.wait_for("kazumi", "热门番组")
+    mouse.assert_untouched()
+
+
 def test_chrome_address_bar_works_while_another_window_is_in_front(desk, chrome_window):
     calc = calculator(desk)
     assert desk.win.set_foreground(calc)

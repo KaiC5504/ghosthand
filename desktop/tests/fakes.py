@@ -1,10 +1,10 @@
 from dataclasses import replace
 
-from ghosthand.model import ElementInfo, Refused, Unanswered, WindowInfo
+from ghosthand.model import ElementInfo, FieldState, Refused, Unanswered, WindowInfo
 
 
 class FakeElement:
-    def __init__(self, role, name="", *, rid=None, actions=(), value=None, aid="", rect=(0, 0, 10, 10), settable=False, refuses=None):
+    def __init__(self, role, name="", *, rid=None, actions=(), value=None, aid="", rect=(0, 0, 10, 10), settable=False, refuses=None, refuses_text=None, focusable=False, password=False):
         self.data = ElementInfo(role=role, name=name, automation_id=aid, runtime_id=rid, rect=rect, actions=tuple(actions), value=value)
         self.children = []
         self.settable = settable
@@ -12,6 +12,10 @@ class FakeElement:
         self.on_perform = None
         self.fails = None
         self.refuses = refuses
+        self.refuses_text = refuses_text
+        self.focusable = focusable
+        self.password = password
+        self.focused = False
 
     def add(self, *kids):
         self.children.extend(kids)
@@ -41,10 +45,18 @@ class FakeBackend:
             raise Refused(element.refuses)
 
     def set_value(self, element, text):
+        if element.refuses_text:
+            raise Refused(element.refuses_text)
         if not element.settable:
             return False
         element.data = replace(element.data, value=text)
         return True
+
+    def field_state(self, element):
+        return FieldState(focused=element.focused, value=element.data.value, password=element.password)
+
+    def focus(self, element):
+        element.focused = element.focusable
 
 
 def window_info(hwnd, title, app, pid=1):
@@ -56,6 +68,9 @@ class FakeWin:
         self.rows = list(rows)
         self.front = rows[0].hwnd if rows else 0
         self.posted = []
+        self.texts = []
+        self.on_text = None
+        self.on_keys = None
         self.focused = []
         self.allow_focus_change = True
         self.on_launch = None
@@ -80,6 +95,13 @@ class FakeWin:
 
     def post_keys(self, hwnd, strokes):
         self.posted.append((hwnd, strokes))
+        if self.on_keys:
+            self.on_keys(strokes)
+
+    def post_text(self, hwnd, text):
+        self.texts.append((hwnd, text))
+        if self.on_text:
+            self.on_text(text)
 
     def send_keys_focused(self, hwnd, strokes):
         self.front = hwnd

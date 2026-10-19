@@ -4,8 +4,8 @@ import time
 from collections.abc import Callable, Sequence
 
 from ghosthand.actions import choose, refusal
-from ghosthand.keys import parse_keys
-from ghosthand.model import Backend, GhostError, Node, Refused, Snapshot
+from ghosthand.keys import parse_keys, utf16_units
+from ghosthand.model import Backend, FieldState, GhostError, Node, Refused, Snapshot
 from ghosthand.reader import render, walk
 from ghosthand.refs import RefTable
 
@@ -85,19 +85,58 @@ class Desktop:
 
     def set_text(self, ref: str, text: str, submit: bool = False) -> str:
         snapshot, node = self._node(ref)
+        headline = f"text set on {ref}"
 
         def work() -> None:
+            nonlocal headline
             try:
                 accepted = self.backend.set_value(node.handle, text)
-            except Refused as error:
-                raise GhostError(refusal(error.code, "set_text", ref, error.text)) from None
+            except Refused:
+                accepted = False
+            else:
+                if not accepted and node.info.role != "edit":
+                    raise GhostError(f"{ref} {node.info.role} takes no direct text. Ask the user before using keys with allow_focus.")
             if not accepted:
-                raise GhostError(f"{ref} {node.info.role} takes no direct text. Ask the user before using keys with allow_focus.")
+                headline = self._type_into(snapshot.hwnd, ref, node, text)
             if submit:
                 self.win.post_keys(snapshot.hwnd, parse_keys("enter"))
 
         note = self._guarded(snapshot.hwnd, work)
-        return self._after(snapshot.hwnd, f"text set on {ref}" + (" and submitted" if submit else ""), note)
+        return self._after(snapshot.hwnd, headline + (" and submitted" if submit else ""), note)
+
+    def _type_into(self, hwnd: int, ref: str, node: Node, text: str) -> str:
+        # Flutter's Windows bridge has no set-value action at all, but a focused Flutter field
+        # takes WM_CHARs posted to its window while the window stays in the background.
+        state = self.backend.field_state(node.handle)
+        if not state.focused:
+            if "default" in node.info.actions or "press" in node.info.actions:
+                self._perform(node, ref, "default" if "default" in node.info.actions else "press")
+            else:
+                try:
+                    self.backend.focus(node.handle)
+                except Refused:
+                    pass
+            self.sleep(SETTLE)
+            state = self.backend.field_state(node.handle)
+            if not state.focused:
+                raise GhostError(f"{ref} would not take keyboard focus without the mouse, so ghosthand typed nothing. Take a screenshot and tell the user.")
+        old = state.value if state.value is not None else node.info.value
+        if old:
+            self.win.post_keys(hwnd, parse_keys("end") + parse_keys("backspace") * len(utf16_units(old)))
+        self.win.post_text(hwnd, text)
+        for _ in range(round(SETTLE_LIMIT / SETTLE)):
+            self.sleep(SETTLE)
+            state = self.backend.field_state(node.handle)
+            if state.value is None or _holds(state, text):
+                break
+        headline = f"text typed into {ref} (the app refused direct text)"
+        if state.value is None:
+            return headline + "; could not read the field back to check"
+        if not _holds(state, text):
+            if state.password:
+                raise GhostError(f"typed into {ref}, but the password field did not end up with the text")
+            raise GhostError(f'typed into {ref}, but it now holds "{state.value}" instead. Read the window and fix it, or tell the user.')
+        return headline
 
     def keys(self, window: str | int, keys: str, allow_focus: bool = False) -> str:
         hwnd = self.resolve(window)
@@ -207,6 +246,11 @@ class Desktop:
         if not self.win.is_window(hwnd):
             return f"{headline}; the window closed"
         return f"{headline}\n{render(self._settled(hwnd, self.snapshot(hwnd), lambda snapshot: True))}"
+
+
+def _holds(state: FieldState, text: str) -> bool:
+    # A password field shows bullets, so only its length can be checked.
+    return len(state.value or "") == len(text) if state.password else state.value == text
 
 
 def _layout(snapshot: Snapshot) -> list[tuple]:
