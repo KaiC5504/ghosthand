@@ -3,7 +3,7 @@ from __future__ import annotations
 import time
 from collections.abc import Callable, Sequence
 
-from ghosthand.actions import choose, refusal
+from ghosthand.actions import SCROLLS, choose, refusal, scroll_target
 from ghosthand.keys import parse_keys, utf16_units
 from ghosthand.model import Backend, FieldState, GhostError, Node, Refused, Snapshot
 from ghosthand.reader import render, walk
@@ -73,9 +73,23 @@ class Desktop:
 
     def act(self, ref: str, action: str = "auto") -> str:
         snapshot, node = self._node(ref)
+        if action in SCROLLS:
+            return self._scroll(snapshot, node, ref, action)
         chosen = choose(node, action)
         note = self._guarded(snapshot.hwnd, lambda: self._perform(node, ref, chosen))
         return self._after(snapshot.hwnd, f"{chosen} {ref}: done", note)
+
+    def _scroll(self, snapshot: Snapshot, node: Node, ref: str, action: str) -> str:
+        target = scroll_target(node)
+        if target is None:
+            raise GhostError(
+                f"nothing at or around {ref} scrolls without the mouse (Flutter apps never offer scrolling). "
+                "Elements just past the visible edge are often already in the read and can be used directly; "
+                "otherwise take a screenshot and tell the user what needs scrolling."
+            )
+        note = self._guarded(snapshot.hwnd, lambda: self._perform(target, target.ref, action))
+        around = f" (around {ref})" if target is not node else ""
+        return self._after(snapshot.hwnd, f"{action} {target.ref}{around}: done", note)
 
     def _perform(self, node: Node, ref: str, action: str) -> None:
         try:

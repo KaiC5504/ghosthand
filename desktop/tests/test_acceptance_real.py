@@ -210,24 +210,66 @@ FORM = (
 )
 
 
-@pytest.fixture
-def classic_form(desk):
-    process = subprocess.Popen(["powershell", "-NoProfile", "-Command", FORM])
+def open_form(desk, script, title):
+    process = subprocess.Popen(["powershell", "-NoProfile", "-Command", script])
     hwnd = None
     for _ in range(60):
         time.sleep(0.25)
-        hwnd = next((row.hwnd for row in desk.win.list_windows() if row.title == "ghosthand keys test"), None)
+        hwnd = next((row.hwnd for row in desk.win.list_windows() if row.title == title), None)
         if hwnd:
             break
     assert hwnd, "test form did not open"
     time.sleep(0.5)
-    yield hwnd
+    return process, hwnd
+
+
+def close_form(process, hwnd):
     ctypes.windll.user32.PostMessageW(hwnd, 0x0010, 0, 0)
     process.wait(10)
+
+
+@pytest.fixture
+def classic_form(desk):
+    process, hwnd = open_form(desk, FORM, "ghosthand keys test")
+    yield hwnd
+    close_form(process, hwnd)
+
+
+LIST_FORM = (
+    "Add-Type -AssemblyName System.Windows.Forms; $f = New-Object System.Windows.Forms.Form; "
+    "$f.Text = 'ghosthand scroll test'; $l = New-Object System.Windows.Forms.ListBox; $l.Dock = 'Fill'; "
+    "0..199 | ForEach-Object { [void]$l.Items.Add(\"item $_\") }; $f.Controls.Add($l); "
+    "[System.Windows.Forms.Application]::Run($f)"
+)
+
+
+@pytest.fixture
+def list_form(desk):
+    process, hwnd = open_form(desk, LIST_FORM, "ghosthand scroll test")
+    yield hwnd
+    close_form(process, hwnd)
+
+
+def first_visible_item(desk, hwnd):
+    # List items scrolled out of view report an empty rectangle.
+    return next(node.info.name for node in desk.snapshot(hwnd).nodes if node.info.role == "list item" and node.info.rect != (0, 0, 0, 0))
 
 
 def test_background_keys_reach_the_focused_control_of_a_classic_window(desk, classic_form):
     with MouseWatch() as mouse:
         out = desk.keys(classic_form, "g h 7 / .")
     assert re.search(r'edit\b.*= "gh7/\."', out), out
+    mouse.assert_untouched()
+
+
+def test_scroll_moves_a_classic_list(desk, list_form):
+    with MouseWatch() as mouse:
+        text = desk.read(list_form)
+        item = refs(text, r'^e\d+ list item "item 0"')[0]
+        assert first_visible_item(desk, list_form) == "item 0"
+        out = desk.act(item, "scroll")
+        assert re.match(rf"scroll e\d+ \(around {item}\): done", out), out
+        assert first_visible_item(desk, list_form) != "item 0"
+        desk.act(refs(text, r"^e\d+ list @")[0], "scroll_up")
+        assert first_visible_item(desk, list_form) == "item 0"
     mouse.assert_untouched()

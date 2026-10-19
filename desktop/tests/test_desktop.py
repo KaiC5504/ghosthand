@@ -269,6 +269,29 @@ def test_shifted_character_in_the_background_explains_why_not():
         desk.keys("notepad", "?")
 
 
+def feed():
+    item = FakeElement("button", "Video 1", rid=(7, 2), actions=("press",))
+    listing = FakeElement("list", "Feed", rid=(7, 1), actions=("scroll",)).add(item)
+    window = FakeElement("window", "BiliFast", rid=(7,)).add(listing)
+    desk = Desktop(FakeBackend({700: window}), FakeWin(window_info(700, "BiliFast", "bilifast")), sleep=lambda seconds: None)
+    return desk, listing
+
+
+def test_scroll_uses_the_nearest_scrollable_container():
+    desk, listing = feed()
+    text = desk.read("bilifast")
+    item, feed_ref = ref_of(text, "Video 1"), ref_of(text, "Feed")
+    assert desk.act(item, "scroll").startswith(f"scroll {feed_ref} (around {item}): done")
+    desk.act(feed_ref, "scroll_up")
+    assert listing.performed == ["scroll", "scroll_up"]
+
+
+def test_scroll_where_nothing_scrolls_says_so():
+    desk, *_ = setup()
+    with pytest.raises(GhostError, match=r"nothing at or around e\d+ scrolls without the mouse"):
+        desk.act(ref_of(desk.read("notepad"), "Save"), "scroll")
+
+
 def test_wait_for_returns_once_text_appears():
     desk, win, save, field, canvas, editor = setup()
     naps = []

@@ -77,3 +77,10 @@ def test_render_says_when_part_of_the_window_did_not_answer():
 def test_render_of_a_whole_answer_has_no_warning():
     window = FakeElement("window", "Editor", rid=(1,)).add(FakeElement("text", "Ready", rid=(2,)))
     assert "did not answer" not in render(snapshot_of(window))
+
+
+def test_a_scrollable_container_is_shown_not_folded():
+    window = FakeElement("window", "Settings", rid=(1,)).add(
+        FakeElement("group", rid=(2,), actions=("scroll",), rect=(10, 40, 300, 600)).add(FakeElement("text", "Wi-Fi", rid=(3,)))
+    )
+    assert render(snapshot_of(window)) == 'window 5 "Editor" (notepad)\n  e2 group @10,40 [scroll]\n    e3 text "Wi-Fi"'

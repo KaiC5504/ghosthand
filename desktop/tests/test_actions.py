@@ -38,3 +38,9 @@ def test_refusal_codes_are_explained():
     assert "did not answer press within 2 s" in refusal(0x80131505, "press", "e4")
     odd = refusal(0x8000FFFF, "press", "e4", "Catastrophic failure")
     assert "Catastrophic failure, 0x8000FFFF" in odd and "-0x" not in odd
+
+
+def test_scroll_is_never_picked_by_auto():
+    assert choose(node("press", "scroll")) == "press"
+    with pytest.raises(GhostError, match="needs a real click"):
+        choose(node("scroll", role="list"))

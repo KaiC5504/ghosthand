@@ -3,7 +3,8 @@ from __future__ import annotations
 from ghosthand.model import GhostError, Node
 
 AUTO_ORDER = ("press", "toggle", "select", "expand", "default")
-ALL_ACTIONS = AUTO_ORDER + ("collapse",)
+SCROLLS = ("scroll", "scroll_up")
+ALL_ACTIONS = AUTO_ORDER + ("collapse",) + SCROLLS
 
 
 def choose(node: Node, requested: str = "auto") -> str:
@@ -21,6 +22,13 @@ def choose(node: Node, requested: str = "auto") -> str:
     if requested not in supported:
         raise GhostError(f'{node.ref} cannot "{requested}"; it supports: {", ".join(supported) or "nothing"}')
     return requested
+
+
+def scroll_target(node: Node) -> Node | None:
+    current: Node | None = node
+    while current is not None and "scroll" not in current.info.actions:
+        current = current.parent
+    return current
 
 
 UIA_E_ELEMENTNOTENABLED = 0x80040200

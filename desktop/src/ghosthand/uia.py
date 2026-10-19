@@ -22,7 +22,7 @@ CACHED = (
     U.UIA_IsInvokePatternAvailablePropertyId, U.UIA_IsTogglePatternAvailablePropertyId,
     U.UIA_IsSelectionItemPatternAvailablePropertyId, U.UIA_IsExpandCollapsePatternAvailablePropertyId,
     U.UIA_IsLegacyIAccessiblePatternAvailablePropertyId, U.UIA_LegacyIAccessibleDefaultActionPropertyId,
-    U.UIA_IsValuePatternAvailablePropertyId, U.UIA_ValueValuePropertyId,
+    U.UIA_IsValuePatternAvailablePropertyId, U.UIA_ValueValuePropertyId, U.UIA_IsScrollPatternAvailablePropertyId,
 )
 
 PATTERNS = {
@@ -33,6 +33,7 @@ PATTERNS = {
     "collapse": (U.UIA_ExpandCollapsePatternId, U.IUIAutomationExpandCollapsePattern, "Collapse"),
     "default": (U.UIA_LegacyIAccessiblePatternId, U.IUIAutomationLegacyIAccessiblePattern, "DoDefaultAction"),
 }
+SCROLL_AMOUNTS = {"scroll": U.ScrollAmount_LargeIncrement, "scroll_up": U.ScrollAmount_LargeDecrement}
 
 
 class UiaBackend:
@@ -70,6 +71,8 @@ class UiaBackend:
             get(U.UIA_LegacyIAccessibleDefaultActionPropertyId) or get(U.UIA_IsKeyboardFocusablePropertyId)
         ):
             actions.append("default")
+        if get(U.UIA_IsScrollPatternAvailablePropertyId):
+            actions.append("scroll")
         value = get(U.UIA_ValueValuePropertyId) if get(U.UIA_IsValuePatternAvailablePropertyId) else None
         runtime_id = get(U.UIA_RuntimeIdPropertyId)
         rect = element.CachedBoundingRectangle
@@ -96,8 +99,12 @@ class UiaBackend:
         return kids
 
     def perform(self, element, action: str) -> None:
-        pattern_id, interface, method = PATTERNS[action]
         try:
+            if action in SCROLL_AMOUNTS:
+                scroller = _pattern(element, U.UIA_ScrollPatternId, U.IUIAutomationScrollPattern)
+                scroller.Scroll(U.ScrollAmount_NoAmount, SCROLL_AMOUNTS[action])
+                return
+            pattern_id, interface, method = PATTERNS[action]
             getattr(_pattern(element, pattern_id, interface), method)()
         except comtypes.COMError as error:
             raise Refused(error.hresult, error.text or "") from None
