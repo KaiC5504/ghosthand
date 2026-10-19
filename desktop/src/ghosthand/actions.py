@@ -21,3 +21,24 @@ def choose(node: Node, requested: str = "auto") -> str:
     if requested not in supported:
         raise GhostError(f'{node.ref} cannot "{requested}"; it supports: {", ".join(supported) or "nothing"}')
     return requested
+
+
+UIA_E_ELEMENTNOTENABLED = 0x80040200
+UIA_E_ELEMENTNOTAVAILABLE = 0x80040201
+UIA_E_INVALIDOPERATION = 0x80131509
+UIA_E_TIMEOUT = 0x80131505
+
+
+def refusal(code: int, action: str, ref: str, text: str = "") -> str:
+    if code == UIA_E_ELEMENTNOTENABLED:
+        return f"{ref} is disabled right now, so {action} did nothing. Read the window to see what it waits for (a required field, loading)."
+    if code == UIA_E_ELEMENTNOTAVAILABLE:
+        return f"stale: {ref} went away during {action}. Read the window again."
+    if code == UIA_E_INVALIDOPERATION:
+        if action in ("scroll", "scroll_up"):
+            return f"{ref} cannot scroll further that way."
+        return f"the app says {action} is not possible on {ref} in its current state. Read the window again."
+    if code == UIA_E_TIMEOUT:
+        return f"the app did not answer {action} within 2 s; it may be busy. Wait, then read the window again."
+    detail = f"{text}, 0x{code:08X}" if text else f"0x{code:08X}"
+    return f"{action} failed: the app refused it ({detail}). Read the window again."

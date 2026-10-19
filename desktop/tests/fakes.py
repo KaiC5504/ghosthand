@@ -1,16 +1,17 @@
 from dataclasses import replace
 
-from ghosthand.model import ElementInfo, Unanswered, WindowInfo
+from ghosthand.model import ElementInfo, Refused, Unanswered, WindowInfo
 
 
 class FakeElement:
-    def __init__(self, role, name="", *, rid=None, actions=(), value=None, aid="", rect=(0, 0, 10, 10), settable=False):
+    def __init__(self, role, name="", *, rid=None, actions=(), value=None, aid="", rect=(0, 0, 10, 10), settable=False, refuses=None):
         self.data = ElementInfo(role=role, name=name, automation_id=aid, runtime_id=rid, rect=rect, actions=tuple(actions), value=value)
         self.children = []
         self.settable = settable
         self.performed = []
         self.on_perform = None
         self.fails = None
+        self.refuses = refuses
 
     def add(self, *kids):
         self.children.extend(kids)
@@ -36,6 +37,8 @@ class FakeBackend:
         element.performed.append(action)
         if element.on_perform:
             element.on_perform(action)
+        if element.refuses:
+            raise Refused(element.refuses)
 
     def set_value(self, element, text):
         if not element.settable:

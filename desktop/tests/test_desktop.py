@@ -340,6 +340,22 @@ def test_action_refused_by_a_window_that_stays_open_is_an_error():
         desk.act(ref_of(desk.read("notepad"), "Save"))
 
 
+def test_disabled_button_says_so():
+    desk, win, save, *_ = setup()
+    save.refuses = 0x80040200
+    ref = ref_of(desk.read("notepad"), "Save")
+    with pytest.raises(GhostError, match=f"{ref} is disabled right now"):
+        desk.act(ref)
+
+
+def test_refusal_while_the_window_closes_still_succeeds():
+    desk, win, save, *_ = setup()
+    save.refuses = 0x80040201
+    save.on_perform = lambda action: win.rows.pop(0)
+    ref = ref_of(desk.read("notepad"), "Save")
+    assert desk.act(ref) == f"press {ref}: done; the window closed"
+
+
 def test_old_ref_from_an_earlier_page_is_not_moved_to_a_later_page():
     desk, window, wrapper, back = flutter_detail_page()
     ref = back_ref(desk.read("kazumi"))

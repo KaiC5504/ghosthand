@@ -3,9 +3,9 @@ from __future__ import annotations
 import time
 from collections.abc import Callable, Sequence
 
-from ghosthand.actions import choose
+from ghosthand.actions import choose, refusal
 from ghosthand.keys import parse_keys
-from ghosthand.model import Backend, GhostError, Node, Snapshot
+from ghosthand.model import Backend, GhostError, Node, Refused, Snapshot
 from ghosthand.reader import render, walk
 from ghosthand.refs import RefTable
 
@@ -74,14 +74,24 @@ class Desktop:
     def act(self, ref: str, action: str = "auto") -> str:
         snapshot, node = self._node(ref)
         chosen = choose(node, action)
-        note = self._guarded(snapshot.hwnd, lambda: self.backend.perform(node.handle, chosen))
+        note = self._guarded(snapshot.hwnd, lambda: self._perform(node, ref, chosen))
         return self._after(snapshot.hwnd, f"{chosen} {ref}: done", note)
+
+    def _perform(self, node: Node, ref: str, action: str) -> None:
+        try:
+            self.backend.perform(node.handle, action)
+        except Refused as error:
+            raise GhostError(refusal(error.code, action, ref, error.text)) from None
 
     def set_text(self, ref: str, text: str, submit: bool = False) -> str:
         snapshot, node = self._node(ref)
 
         def work() -> None:
-            if not self.backend.set_value(node.handle, text):
+            try:
+                accepted = self.backend.set_value(node.handle, text)
+            except Refused as error:
+                raise GhostError(refusal(error.code, "set_text", ref, error.text)) from None
+            if not accepted:
                 raise GhostError(f"{ref} {node.info.role} takes no direct text. Ask the user before using keys with allow_focus.")
             if submit:
                 self.win.post_keys(snapshot.hwnd, parse_keys("enter"))

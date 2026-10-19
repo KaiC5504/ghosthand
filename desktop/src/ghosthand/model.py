@@ -17,6 +17,15 @@ class Unanswered(Exception):
         self.code = code
 
 
+class Refused(Exception):
+    """The app turned down a UI Automation call; code is its HRESULT as an unsigned number."""
+
+    def __init__(self, code: int, text: str = ""):
+        super().__init__(f"0x{code & 0xFFFFFFFF:08X} {text}".strip())
+        self.code = code & 0xFFFFFFFF
+        self.text = text
+
+
 @dataclass(frozen=True)
 class ElementInfo:
     role: str
