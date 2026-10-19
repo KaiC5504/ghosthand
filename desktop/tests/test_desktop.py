@@ -251,6 +251,73 @@ def test_set_text_never_echoes_a_password_back():
     assert "hunter22" not in str(error.value) and "•" not in str(error.value)
 
 
+def test_set_text_explains_a_field_that_goes_away_while_it_is_read_back():
+    desk, win, field = flutter_field()
+    win.on_text = lambda text: setattr(field, "gone", True)
+    with pytest.raises(GhostError, match=r"stale: e\d+ went away during set_text"):
+        desk.set_text(ref_of(desk.read("kazumi"), "搜索番剧名称"), "ab")
+
+
+def test_set_text_on_a_disabled_or_busy_field_says_so_instead_of_typing():
+    for code, says in ((0x80040200, "is disabled right now"), (0x80131505, "did not answer set_text within 2 s")):
+        desk, win, field = flutter_field()
+        field.refuses_text = code
+        with pytest.raises(GhostError, match=says):
+            desk.set_text(ref_of(desk.read("kazumi"), "搜索番剧名称"), "ab")
+        assert win.texts == []
+
+
+def test_set_text_never_types_into_something_that_is_not_a_text_field():
+    theme = FakeElement("combo box", "Theme", rid=(6, 1), actions=("expand", "collapse"), value="Light", refuses_text=0x80004005)
+    win = FakeWin(window_info(600, "Settings", "settings"))
+    desk = Desktop(FakeBackend({600: FakeElement("window", "Settings", rid=(6,)).add(theme)}), win, sleep=lambda seconds: None)
+    with pytest.raises(GhostError, match="set_text failed: the app refused it"):
+        desk.set_text(ref_of(desk.read("settings"), "Theme"), "Dark")
+    assert win.posted == [] and win.texts == [] and theme.performed == []
+
+
+def test_typing_that_closes_its_window_does_not_claim_the_text_was_set():
+    desk, win, field = flutter_field()
+    win.on_text = lambda text: win.rows.pop(0)
+    ref = ref_of(desk.read("kazumi"), "搜索番剧名称")
+    assert desk.set_text(ref, "1234") == f"text typed into {ref} (the app refused direct text); the window closed"
+
+
+def test_set_text_does_not_submit_text_it_could_not_check():
+    desk, win, field = flutter_field()
+    field.unreadable = True
+    out = desk.set_text(ref_of(desk.read("kazumi"), "搜索番剧名称"), "ab", submit=True)
+    assert "could not read the field back to check, so it was not submitted" in out
+    assert all(KeyStroke(0x0D) not in strokes for _, strokes in win.posted)
+
+
+def test_a_wrong_field_value_is_quoted_short():
+    desk, win, field = flutter_field()
+    win.on_text = lambda text: setattr(field, "data", replace(field.data, value="x" * 500))
+    with pytest.raises(GhostError) as error:
+        desk.set_text(ref_of(desk.read("kazumi"), "搜索番剧名称"), "ab")
+    assert len(str(error.value)) < 250
+
+
+def test_focus_taken_by_the_tap_goes_back_even_when_typing_fails():
+    # Kazumi comes to the front when its field is tapped, and must stay there until the text is in.
+    desk, win, field = flutter_field()
+    win.rows.append(window_info(OTHER, "Claude", "claude", pid=30))
+    win.front = OTHER
+
+    def tap(action):
+        field.focused = True
+        win.front = 500
+
+    field.on_perform = tap
+    fronts = []
+    win.on_text = lambda text: (fronts.append(win.front), setattr(field, "data", replace(field.data, value="a")))
+    with pytest.raises(GhostError, match='now holds "a" instead'):
+        desk.set_text(ref_of(desk.read("kazumi"), "搜索番剧名称"), "ab")
+    assert fronts == [500]
+    assert win.front == OTHER
+
+
 def test_keys_go_in_the_background_but_combinations_need_permission():
     desk, win, *_ = setup()
     desk.keys("notepad", "tab enter")

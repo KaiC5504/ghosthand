@@ -35,6 +35,8 @@ UIA_E_ELEMENTNOTENABLED = 0x80040200
 UIA_E_ELEMENTNOTAVAILABLE = 0x80040201
 UIA_E_INVALIDOPERATION = 0x80131509
 UIA_E_TIMEOUT = 0x80131505
+# set_text refusals that typing would not get past.
+NOT_TYPED_INTO = (UIA_E_ELEMENTNOTENABLED, UIA_E_ELEMENTNOTAVAILABLE, UIA_E_TIMEOUT)
 
 
 def refusal(code: int, action: str, ref: str, text: str = "") -> str:
@@ -43,7 +45,7 @@ def refusal(code: int, action: str, ref: str, text: str = "") -> str:
     if code == UIA_E_ELEMENTNOTAVAILABLE:
         return f"stale: {ref} went away during {action}. Read the window again."
     if code == UIA_E_INVALIDOPERATION:
-        if action in ("scroll", "scroll_up"):
+        if action in SCROLLS:
             return f"{ref} cannot scroll further that way."
         return f"the app says {action} is not possible on {ref} in its current state. Read the window again."
     if code == UIA_E_TIMEOUT:

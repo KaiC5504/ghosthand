@@ -13,7 +13,12 @@ ghosthand must do; this file says where the build ended up and why.
   into Flutter fields, `act` can `scroll` / `scroll_up`, `keys` takes punctuation, and refusals
   say what they mean ("disabled right now" instead of `-0x7ffbfe00`). Plan:
   `docs/superpowers/plans/2026-10-19-ghosthand-0.1.6-fixes.md`.
-- Tests: 107 unit tests, 15 live-desktop tests, 2 cookie-export tests, 4 browser smoke checks.
+- Tests: 115 unit tests, 16 live-desktop tests, 2 cookie-export tests, 4 browser smoke checks.
+  The Kazumi card test and the Calculator test can fail while someone uses the PC during the run
+  (window switching, mouse movement); this happens on 0.1.5 too.
+- Still to do for 0.1.6: install it (`claude plugin install ghosthand@ghosthand`), then check it on
+  BiliFast, the app whose log started this: `set_text` (and `submit`) in the comment composer,
+  `keys` with `/`, `act` with `scroll` on the feed.
 - Benchmark (measured just before the final review fixes): 14/14 runs, fastest tool on every task,
   zero mouse input. See the README.
 - A fresh reviewer checked the whole branch; its one critical and seven important findings are
@@ -110,6 +115,10 @@ A quick look in PowerShell:
     `WM_CHAR`s posted to the window's `FLUTTERVIEW` type into it with the window in the background,
     emoji included, and posted `end` + backspaces clear it. `set_text` does this when direct text is
     refused, then reads the field back.
+  - The tap often pulls the app to the front. Its focus must stay there until the text is in:
+    handing focus back right after the tap made Flutter drop every posted character. ghosthand
+    hands it back as soon as the read-back ends, so the user's own keys can only reach the field
+    during the typing itself (one live run lost an emoji to that).
   - Flutter exposes no ScrollPattern or ScrollItemPattern (none of 62 Kazumi elements), and its
     `ScrollIntoView` never sets the action type, so it could not scroll even if exposed. Posting
     `WM_MOUSEWHEEL` does scroll, but Flutter reads the position from `GetCursorPos`, so it scrolls
@@ -154,7 +163,13 @@ Each with what it costs if it turns out wrong.
     shows up as a "now holds … instead" error rather than a silent success.
 15. A typed `set_text` counts as done only once the field reads back the same text (a password
     field: the same length). A field that cannot be read back is accepted, and the result says it
-    was not checked.
+    was not checked; with `submit` it is then not submitted. Only `edit` elements are typed into
+    (End and letters would change a drop-down's choice), and a field that is disabled, gone or
+    busy gets that error instead of typing.
+17. A `set_text` error can quote what the field holds; the failure log keeps only its length,
+    since it may be a token the user just had typed.
+18. `scroll` reads the scroll position first and refuses at the end: a Win32 list at its top
+    answers another page up with success.
 16. Posted mouse-wheel messages were rejected for scrolling: Flutter scrolls under the real cursor,
     and a posted mouse message is still mouse input. `scroll` is never picked by `auto`.
 

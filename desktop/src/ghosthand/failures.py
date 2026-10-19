@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import sys
 import uuid
 from collections import deque
@@ -37,6 +38,13 @@ def _redact(tool: str, args: dict) -> dict:
     return args
 
 
+def _redact_error(tool: str, error: str) -> str:
+    # A set_text error can quote what the field holds, which may be the secret just typed.
+    if tool == "set_text":
+        return re.sub(r'holds "(.*)" instead', lambda match: f"holds <{len(match[1])} chars> instead", error, flags=re.S)
+    return error
+
+
 class FailureLog:
     """Appends failed calls and Claude's own reports to failures.jsonl, each with the calls before it."""
 
@@ -50,7 +58,7 @@ class FailureLog:
     def call(self, tool: str, args: dict, seconds: float, error: str | None = None, trace: str | None = None) -> None:
         args = _redact(tool, args)
         if error is not None:
-            entry = {"source": "ghosthand", "tool": tool, "args": args, "error": error}
+            entry = {"source": "ghosthand", "tool": tool, "args": args, "error": _redact_error(tool, error)}
             if trace:
                 entry["traceback"] = trace
             try:

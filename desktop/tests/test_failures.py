@@ -48,6 +48,13 @@ def test_set_text_logs_only_the_length_of_the_text(log):
     assert "hunter2" not in log.path.read_text("utf-8")
 
 
+def test_set_text_errors_log_only_the_length_of_what_the_field_holds(log):
+    log.call("set_text", {"ref": "e2", "text": "sk-live-TOKEN"}, 0.3, 'typed into e2, but it now holds "sk-live-TOKE" instead. Read the window and fix it, or tell the user.')
+    error = records(log)[0]["error"]
+    assert "TOKE" not in error
+    assert "now holds <12 chars> instead" in error
+
+
 def test_only_the_last_ten_calls_are_kept(log):
     for number in range(15):
         log.call("read", {"window": number}, 0.01)

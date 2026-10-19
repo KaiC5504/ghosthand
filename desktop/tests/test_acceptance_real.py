@@ -8,6 +8,7 @@ from ctypes import wintypes
 import pytest
 
 from ghosthand.desktop import Desktop
+from ghosthand.model import GhostError
 from ghosthand.uia import UiaBackend
 from ghosthand.win32 import Win32
 
@@ -272,4 +273,12 @@ def test_scroll_moves_a_classic_list(desk, list_form):
         assert first_visible_item(desk, list_form) != "item 0"
         desk.act(refs(text, r"^e\d+ list @")[0], "scroll_up")
         assert first_visible_item(desk, list_form) == "item 0"
+    mouse.assert_untouched()
+
+
+def test_scroll_past_the_top_says_so(desk, list_form):
+    with MouseWatch() as mouse:
+        listing = refs(desk.read(list_form), r"^e\d+ list @")[0]
+        with pytest.raises(GhostError, match="cannot scroll further that way"):
+            desk.act(listing, "scroll_up")
     mouse.assert_untouched()

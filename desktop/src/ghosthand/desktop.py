@@ -3,10 +3,10 @@ from __future__ import annotations
 import time
 from collections.abc import Callable, Sequence
 
-from ghosthand.actions import SCROLLS, choose, refusal, scroll_target
+from ghosthand.actions import NOT_TYPED_INTO, SCROLLS, choose, refusal, scroll_target
 from ghosthand.keys import parse_keys, utf16_units
 from ghosthand.model import Backend, FieldState, GhostError, Node, Refused, Snapshot
-from ghosthand.reader import render, walk
+from ghosthand.reader import clean, render, walk
 from ghosthand.refs import RefTable
 
 SETTLE = 0.15
@@ -100,28 +100,41 @@ class Desktop:
     def set_text(self, ref: str, text: str, submit: bool = False) -> str:
         snapshot, node = self._node(ref)
         headline = f"text set on {ref}"
+        front = self.win.foreground()
+        handed_back = ""
 
         def work() -> None:
-            nonlocal headline
+            nonlocal headline, handed_back
             try:
                 accepted = self.backend.set_value(node.handle, text)
-            except Refused:
+            except Refused as error:
+                # Only text fields are typed into: End and letters change what a drop-down has chosen.
+                if node.info.role != "edit" or error.code in NOT_TYPED_INTO:
+                    raise GhostError(refusal(error.code, "set_text", ref, error.text)) from None
                 accepted = False
-            else:
-                if not accepted and node.info.role != "edit":
-                    raise GhostError(f"{ref} {node.info.role} takes no direct text. Ask the user before using keys with allow_focus.")
             if not accepted:
-                headline = self._type_into(snapshot.hwnd, ref, node, text)
+                if node.info.role != "edit":
+                    raise GhostError(f"{ref} {node.info.role} takes no direct text. Ask the user before using keys with allow_focus.")
+                headline = f"text typed into {ref} (the app refused direct text)"
+                verified, handed_back = self._type_into(snapshot.hwnd, ref, node, text, front)
+                if not verified:
+                    headline += "; could not read the field back to check"
+                    if submit:
+                        headline += ", so it was not submitted. Read the window, then send enter with keys if the text is right"
+                    return
             if submit:
                 self.win.post_keys(snapshot.hwnd, parse_keys("enter"))
+                headline += " and submitted"
 
         note = self._guarded(snapshot.hwnd, work)
-        return self._after(snapshot.hwnd, headline + (" and submitted" if submit else ""), note)
+        return self._after(snapshot.hwnd, headline, note or handed_back)
 
-    def _type_into(self, hwnd: int, ref: str, node: Node, text: str) -> str:
+    def _type_into(self, hwnd: int, ref: str, node: Node, text: str, front: int) -> tuple[bool, str]:
+        """Types into a field that refused direct text; returns whether the field read back the text
+        (False when it cannot be read) and the note from handing focus back."""
         # Flutter's Windows bridge has no set-value action at all, but a focused Flutter field
         # takes WM_CHARs posted to its window while the window stays in the background.
-        state = self.backend.field_state(node.handle)
+        state = self._field_state(node, ref)
         if not state.focused:
             if "default" in node.info.actions or "press" in node.info.actions:
                 self._perform(node, ref, "default" if "default" in node.info.actions else "press")
@@ -131,7 +144,7 @@ class Desktop:
                 except Refused:
                     pass
             self.sleep(SETTLE)
-            state = self.backend.field_state(node.handle)
+            state = self._field_state(node, ref)
             if not state.focused:
                 raise GhostError(f"{ref} would not take keyboard focus without the mouse, so ghosthand typed nothing. Take a screenshot and tell the user.")
         old = state.value if state.value is not None else node.info.value
@@ -140,17 +153,25 @@ class Desktop:
         self.win.post_text(hwnd, text)
         for _ in range(round(SETTLE_LIMIT / SETTLE)):
             self.sleep(SETTLE)
-            state = self.backend.field_state(node.handle)
+            state = self._field_state(node, ref)
             if state.value is None or _holds(state, text):
                 break
-        headline = f"text typed into {ref} (the app refused direct text)"
+        # Flutter drops posted text once its window loses the front, so focus goes back only now,
+        # and at once: the user's own keys would land in the field until it does.
+        handed_back = self._hand_back(front, hwnd)
         if state.value is None:
-            return headline + "; could not read the field back to check"
+            return False, handed_back
         if not _holds(state, text):
             if state.password:
                 raise GhostError(f"typed into {ref}, but the password field did not end up with the text")
-            raise GhostError(f'typed into {ref}, but it now holds "{state.value}" instead. Read the window and fix it, or tell the user.')
-        return headline
+            raise GhostError(f'typed into {ref}, but it now holds "{clean(state.value)}" instead. Read the window and fix it, or tell the user.')
+        return True, handed_back
+
+    def _field_state(self, node: Node, ref: str) -> FieldState:
+        try:
+            return self.backend.field_state(node.handle)
+        except Refused as error:
+            raise GhostError(refusal(error.code, "set_text", ref, error.text)) from None
 
     def keys(self, window: str | int, keys: str, allow_focus: bool = False) -> str:
         hwnd = self.resolve(window)

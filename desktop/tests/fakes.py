@@ -16,6 +16,8 @@ class FakeElement:
         self.focusable = focusable
         self.password = password
         self.focused = False
+        self.gone = False
+        self.unreadable = False
 
     def add(self, *kids):
         self.children.extend(kids)
@@ -53,7 +55,10 @@ class FakeBackend:
         return True
 
     def field_state(self, element):
-        return FieldState(focused=element.focused, value=element.data.value, password=element.password)
+        if element.gone:
+            raise Refused(0x80040201)
+        value = None if element.unreadable else element.data.value
+        return FieldState(focused=element.focused, value=value, password=element.password)
 
     def focus(self, element):
         element.focused = element.focusable
