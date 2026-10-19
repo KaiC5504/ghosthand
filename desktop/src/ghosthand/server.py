@@ -97,19 +97,22 @@ async def read(window: str | int, ref: str | None = None, query: str | None = No
 
 @server.tool()
 async def act(ref: str, action: str = "auto") -> str:
-    """Use an element without the mouse. auto picks press, toggle, select, expand or default. Returns the fresh window."""
+    """Use an element without the mouse. auto picks press, toggle, select, expand or default;
+    scroll / scroll_up page the nearest scrollable container. Returns the fresh window."""
     return await _call("act", ref=ref, action=action)
 
 
 @server.tool()
 async def set_text(ref: str, text: str, submit: bool = False) -> str:
-    """Put text straight into a field; submit=true then presses Enter in the background."""
+    """Put text into a field. Apps that refuse direct text (Flutter) get it typed in the background
+    instead; the result says which. submit=true then presses Enter."""
     return await _call("set_text", ref=ref, text=text, submit=submit)
 
 
 @server.tool()
 async def keys(window: str | int, keys: str, allow_focus: bool = False) -> str:
-    """Send keys such as "enter", "tab tab", "f5" in the background.
+    """Send keys such as "enter", "tab tab", "f5", "/" or "comma" in the background; to put text
+    into a field, use set_text.
 
     Combinations like ctrl+s need allow_focus=true, which brings the window to the front:
     ask the user before using it.

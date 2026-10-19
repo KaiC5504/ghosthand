@@ -6,11 +6,14 @@ ghosthand must do; this file says where the build ended up and why.
 
 ## Status
 
-- Public at https://github.com/KaiC5504/ghosthand (`main`). Installed as plugin
-  `ghosthand@ghosthand` version 0.1.5 (the server loads its UI Automation backend at start, so a
-  server still running while this repo is updated keeps the code it started with).
-- Tests: 90 unit tests, 13 live-desktop tests, 2 cookie-export tests, 4 browser smoke checks — all
-  passing on the final code.
+- Public at https://github.com/KaiC5504/ghosthand (`main`). Plugin version 0.1.6 (the server loads
+  its UI Automation backend at start, so a server still running while this repo is updated keeps
+  the code it started with).
+- 0.1.6 (2026-10-20) fixes what the 2026-10-18/19 failure log showed on BiliFast: `set_text` types
+  into Flutter fields, `act` can `scroll` / `scroll_up`, `keys` takes punctuation, and refusals
+  say what they mean ("disabled right now" instead of `-0x7ffbfe00`). Plan:
+  `docs/superpowers/plans/2026-10-19-ghosthand-0.1.6-fixes.md`.
+- Tests: 107 unit tests, 15 live-desktop tests, 2 cookie-export tests, 4 browser smoke checks.
 - Benchmark (measured just before the final review fixes): 14/14 runs, fastest tool on every task,
   zero mouse input. See the README.
 - A fresh reviewer checked the whole branch; its one critical and seven important findings are
@@ -99,6 +102,22 @@ A quick look in PowerShell:
   menu's own button again closes it.
 - **Playwright MCP writes logs and snapshots into the session's working directory** unless given
   `--output-dir`; it now writes to `%LOCALAPPDATA%\ghosthand\playwright-out`.
+- **Flutter's Windows accessibility bridge only knows three actions** (2026-10-19, engine
+  `flutter_platform_node_delegate.cc`): tap (`DoDefaultAction`), accessibility focus, and
+  show-on-screen. So:
+  - UIA `SetValue` on a Flutter text field always fails with `E_FAIL` ("Unspecified error"). A
+    Flutter field offers ValuePattern only while it has focus. Once it is focused (a `default` tap),
+    `WM_CHAR`s posted to the window's `FLUTTERVIEW` type into it with the window in the background,
+    emoji included, and posted `end` + backspaces clear it. `set_text` does this when direct text is
+    refused, then reads the field back.
+  - Flutter exposes no ScrollPattern or ScrollItemPattern (none of 62 Kazumi elements), and its
+    `ScrollIntoView` never sets the action type, so it could not scroll even if exposed. Posting
+    `WM_MOUSEWHEEL` does scroll, but Flutter reads the position from `GetCursorPos`, so it scrolls
+    whatever is under the user's real cursor. Flutter apps cannot be scrolled without the mouse.
+- **Classic lists scroll through ScrollPattern**: a WinForms ListBox shows `[default, scroll]`, and
+  items scrolled out of view report an empty rectangle (0,0,0,0), not a negative position.
+- **The odd negative codes in the log are UIA errors**: `-0x7ffbfe00` is `0x80040200` (element
+  disabled) and `-0x7feceaf7` is `0x80131509` (not possible in the current state).
 
 ## Decisions made during the build
 
@@ -128,13 +147,21 @@ Each with what it costs if it turns out wrong.
     Cheaper than a stale ref costing Claude another read; if actions feel slow, this is why.
 12. A failed child listing is reported as a note, not an error, since elements also vanish
     mid-animation; the note can therefore show up on a page that was only changing.
+13. `keys` maps punctuation for a US keyboard layout. On another layout a posted `/` may arrive as a
+    different character; `set_text` is the safe way to put text in.
+14. `set_text` clears a field it types into with `end` and one backspace per UTF-16 unit of the old
+    text. In a multi-line field `end` only reaches the end of the caret's line, so leftover text
+    shows up as a "now holds … instead" error rather than a silent success.
+15. A typed `set_text` counts as done only once the field reads back the same text (a password
+    field: the same length). A field that cannot be read back is accepted, and the result says it
+    was not checked.
+16. Posted mouse-wheel messages were rejected for scrolling: Flutter scrolls under the real cursor,
+    and a posted mouse message is still mouse input. `scroll` is never picked by `auto`.
 
 ## Open items (small, deferred)
 
 - Empty text boxes with no other actions are folded out of reads, and nothing marks which fields
   accept `set_text` (idea: a `[text]` marker).
-- If a button's pattern vanishes between read and act, the error says "internal error" instead of
-  "stale".
 - `PrintWindow` and `BringWindowToTop` can block on a hung app (no timeout).
 - Screenshots include the invisible window border strip (use `DWMWA_EXTENDED_FRAME_BOUNDS`).
 - The cut-off note does not say whether the element or the depth limit was hit.

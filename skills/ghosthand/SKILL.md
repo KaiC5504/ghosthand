@@ -22,6 +22,9 @@ Two MCP servers come with this plugin:
 3. Use `wait_for` for anything that loads or animates. Never sleep.
    `keys` cannot tell whether the app took them: check the fresh read it returns.
    Flutter apps such as Kazumi ignore a background `escape` on popup menus: press the button that opened the menu again.
+   `set_text` works on Flutter fields too: it types in the background and checks the field holds the text.
+   `act` with `scroll` / `scroll_up` pages a list. Flutter apps cannot scroll without the mouse: use elements just past the edge if the read already has them, otherwise take a `screenshot` and tell the user.
+   `keys` takes punctuation (`/`, `comma`); characters typed with shift, like `?`, need `allow_focus`.
 4. Confirm the outcome from the tool's own output before saying something worked.
 
 A read ending in `(part of the window did not answer …)` may be missing elements. If a second read is still emptier than a `screenshot`, the app's accessibility tree is broken (common in Flutter apps): tell the user and restart the app.
