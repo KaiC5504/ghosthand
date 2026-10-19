@@ -107,8 +107,9 @@ class Desktop:
         else:
             if any(stroke.modifiers for stroke in strokes):
                 raise GhostError(
-                    "ctrl/alt/shift/win combinations only work with the window in front. "
-                    "Ask the user, then call keys again with allow_focus=true."
+                    "ctrl/alt/shift/win combinations, and characters typed with shift like ? or :, only work with "
+                    "the window in front. To put text into a field, use set_text. Otherwise ask the user, then call "
+                    "keys again with allow_focus=true."
                 )
             note = self._guarded(hwnd, lambda: self.win.post_keys(hwnd, strokes))
         return self._after(hwnd, f"sent {keys}", note)

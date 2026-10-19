@@ -199,12 +199,18 @@ def test_keys_go_in_the_background_but_combinations_need_permission():
     desk, win, *_ = setup()
     desk.keys("notepad", "tab enter")
     assert win.posted == [(EDITOR, parse_keys("tab enter"))]
-    with pytest.raises(GhostError, match="Ask the user"):
+    with pytest.raises(GhostError, match="ask the user, then call keys again"):
         desk.keys("notepad", "ctrl+s")
     assert win.focused == []
     desk.keys("notepad", "ctrl+s", allow_focus=True)
     assert win.focused == [(EDITOR, parse_keys("ctrl+s"))]
     assert win.front == OTHER
+
+
+def test_shifted_character_in_the_background_explains_why_not():
+    desk, *_ = setup()
+    with pytest.raises(GhostError, match="characters typed with shift"):
+        desk.keys("notepad", "?")
 
 
 def test_wait_for_returns_once_text_appears():

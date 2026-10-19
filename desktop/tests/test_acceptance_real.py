@@ -211,6 +211,6 @@ def classic_form(desk):
 
 def test_background_keys_reach_the_focused_control_of_a_classic_window(desk, classic_form):
     with MouseWatch() as mouse:
-        out = desk.keys(classic_form, "g h 7")
-    assert re.search(r'edit\b.*= "gh7"', out), out
+        out = desk.keys(classic_form, "g h 7 / .")
+    assert re.search(r'edit\b.*= "gh7/\."', out), out
     mouse.assert_untouched()
