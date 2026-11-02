@@ -114,7 +114,8 @@ Failed calls are logged to `%LOCALAPPDATA%\ghosthand\logs\failures.jsonl`.
 **ghosthand-browser**: Playwright MCP on a test Chrome with its own permanent profile in
 `%LOCALAPPDATA%\ghosthand\chrome-profile`. Log in once and it stays logged in. To copy a
 site's logins from your real Chrome, load [`cookie-export/`](cookie-export) as an unpacked
-extension.
+extension. Chrome starts with `--test-type` ([`browser/playwright.json`](browser/playwright.json)),
+which hides the "unsupported command-line flag" banner Playwright's own flags would show.
 
 The plugin also installs a skill that teaches Claude which server to use and the rules
 (never the mouse; ask before bringing a window to the front).

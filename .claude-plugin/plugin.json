@@ -1,6 +1,6 @@
 {
   "name": "ghosthand",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "description": "Mouse-free control of Windows apps plus a DevTools test Chrome, for building and testing apps without touching your mouse.",
   "author": { "name": "KaiC5504" },
   "license": "MIT",
@@ -18,7 +18,8 @@
         "--user-data-dir", "%LOCALAPPDATA%\\ghosthand\\chrome-profile",
         "--output-dir", "%LOCALAPPDATA%\\ghosthand\\playwright-out",
         "--allow-unrestricted-file-access",
-        "--caps", "devtools"
+        "--caps", "devtools",
+        "--config", "${CLAUDE_PLUGIN_ROOT}/browser/playwright.json"
       ]
     }
   }

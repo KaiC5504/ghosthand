@@ -6,9 +6,12 @@ ghosthand must do; this file says where the build ended up and why.
 
 ## Status
 
-- Public at https://github.com/KaiC5504/ghosthand (`main`). Plugin version 0.1.6 (the server loads
+- Public at https://github.com/KaiC5504/ghosthand (`main`). Plugin version 0.1.7 (the server loads
   its UI Automation backend at start, so a server still running while this repo is updated keeps
   the code it started with).
+- 0.1.7 (2026-11-02): the test Chrome no longer shows "You are using an unsupported command-line
+  flag: --disable-blink-features=AutomationControlled", and the skill steps aside for a browser tool
+  the user's instructions put first.
 - 0.1.6 (2026-10-20) fixes what the 2026-10-18/19 failure log showed on BiliFast: `set_text` types
   into Flutter fields, `act` can `scroll` / `scroll_up`, `keys` takes punctuation, and refusals
   say what they mean ("disabled right now" instead of `-0x7ffbfe00`). Plan:
@@ -105,6 +108,11 @@ A quick look in PowerShell:
   with "part of the window did not answer (<hresult>)". Restarting the app fixes the tree.
 - **Flutter popup menus ignore a background `escape`**, even with a healthy tree. Pressing the
   menu's own button again closes it.
+- **Playwright MCP 0.0.83 adds `--disable-blink-features=AutomationControlled` to every Chrome it
+  starts** (unless an arg already mentions `--disable-blink-features`), which hides
+  `navigator.webdriver`. Branded Chrome answers with an "unsupported command-line flag" banner.
+  `--test-type`, passed through `browser/playwright.json`, hides the banner and keeps the flag;
+  dropping the flag would make logged-in sites likelier to treat the test Chrome as a bot.
 - **Playwright MCP writes logs and snapshots into the session's working directory** unless given
   `--output-dir`; it now writes to `%LOCALAPPDATA%\ghosthand\playwright-out`.
 - **Flutter's Windows accessibility bridge only knows three actions** (2026-10-19, engine

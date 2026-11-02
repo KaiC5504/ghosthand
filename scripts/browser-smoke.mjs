@@ -13,7 +13,8 @@ writeFileSync(file, JSON.stringify([{ name: "ghosthand_smoke", value: "SMOKE-SEC
 const client = new Client({ name: "ghosthand-smoke", version: "1" });
 await client.connect(new StdioClientTransport({
   command: "node",
-  args: ["node_modules/@playwright/mcp/cli.js", "--browser", "chrome", "--isolated", "--headless", "--allow-unrestricted-file-access", "--caps", "devtools"],
+  args: ["node_modules/@playwright/mcp/cli.js", "--browser", "chrome", "--isolated", "--headless", "--allow-unrestricted-file-access", "--caps", "devtools",
+    "--config", "../browser/playwright.json"],
 }));
 const text = (result) => result.content.map((part) => part.text ?? "").join("\n");
 let failed = false;
@@ -21,6 +22,8 @@ const check = (label, ok) => { console.log(`${ok ? "ok  " : "FAIL"} ${label}`); 
 
 await client.callTool({ name: "browser_navigate", arguments: { url: "https://example.com/" } });
 await client.callTool({ name: "browser_evaluate", arguments: { function: "() => console.error('ghosthand smoke console')" } });
+// The config's --test-type must not displace Playwright's own --disable-blink-features flag.
+check("navigator.webdriver stays hidden", /"false"/.test(text(await client.callTool({ name: "browser_evaluate", arguments: { function: "() => String(navigator.webdriver)" } }))));
 check("console messages are readable", text(await client.callTool({ name: "browser_console_messages", arguments: { level: "error" } })).includes("ghosthand smoke console"));
 
 const url = "file:///" + file.replace(/\\/g, "/");

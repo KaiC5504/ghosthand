@@ -4,7 +4,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ghosthand is a Claude Code plugin with two MCP servers: **ghosthand** (Python, mouse-free
 Windows UI Automation) and **ghosthand-browser** (Playwright MCP 0.0.83, pinned, on a test Chrome
-with its own profile). Both are declared in `.claude-plugin/plugin.json`. Read
+with its own profile). Both are declared in `.claude-plugin/plugin.json`; extra Chrome launch
+options for ghosthand-browser go in `browser/playwright.json`. Read
 `docs/build-notes.md` before changing behaviour: it records the status, open items, hard-won
 lessons and the rulings behind non-obvious code. The spec is
 `docs/superpowers/specs/2026-10-12-ghosthand-design.md`.

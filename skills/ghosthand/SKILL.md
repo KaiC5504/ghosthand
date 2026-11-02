@@ -1,6 +1,6 @@
 ---
 name: ghosthand
-description: Use when operating or testing anything on the user's Windows PC — native apps (Win32, WinUI, Flutter like Kazumi, Tauri), the real Chrome's own pages such as chrome://extensions, or web pages under development in the ghosthand test Chrome. Covers which tool to use, the read-act loop, never using the mouse, asking before focus, and importing cookies into the test Chrome.
+description: Use when operating or testing anything on the user's Windows PC — native apps (Win32, WinUI, Flutter like Kazumi, Tauri), the real Chrome's own pages such as chrome://extensions, or web pages that need the ghosthand test Chrome. Covers which tool to use, the read-act loop, never using the mouse, asking before focus, and importing cookies into the test Chrome.
 ---
 
 # ghosthand
@@ -12,7 +12,7 @@ Two MCP servers come with this plugin:
 
 ## Which one
 
-- A web page you are building or debugging, or anything needing console/network/JS → **ghosthand-browser**.
+- A web page, or anything needing console/network/JS → **ghosthand-browser**, unless the user's instructions put another browser tool first (for example obscura). Then use that one, and come to ghosthand-browser only when it can't do the job: the site blocks it or breaks in it, the task needs the test Chrome's logged-in profile or an extension, or the user wants to watch or take over.
 - Native apps, the real Chrome's own pages (chrome://extensions, settings), Kazumi, Calculator, installers → **ghosthand**.
 
 ## The desktop loop
