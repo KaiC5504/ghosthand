@@ -30,10 +30,10 @@ There is no linter or formatter configured.
 
 ## Shipping a change
 
-The terminal `claude` runs the plugin from this folder; the desktop app runs a copy in
-`~/.claude/plugins/cache/ghosthand/ghosthand/<version>`. To ship: run the tests, bump `version` in
-`.claude-plugin/plugin.json`, commit, run `claude plugin install ghosthand@ghosthand`, start a new
-session. Reinstalling the same version fails while a session still runs the old copy.
+Since 2026-11 Claude Code loads this directory marketplace in place, the desktop app included
+(older versions ran a copy in `~/.claude/plugins/cache/ghosthand/ghosthand/<version>`). To ship: run
+the tests, bump `version` in `.claude-plugin/plugin.json`, commit, run
+`claude plugin update ghosthand@ghosthand` to record the version, start a new session.
 
 - Don't add `--no-dev` to the server command (the venv would lose pytest).
 - Keep the MCP servers in `plugin.json`; a root `.mcp.json` would also load as project config.

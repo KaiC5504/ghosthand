@@ -45,15 +45,17 @@ ghosthand must do; this file says where the build ended up and why.
 
 ## How to ship a change
 
-The terminal `claude` runs the plugin straight from this folder, but the desktop app runs the
-copy made at install time in `~/.claude/plugins/cache/ghosthand/ghosthand/<version>`. So:
+Since 2026-11 (shipping 0.1.7) Claude Code loads this directory marketplace in place, the desktop
+app included: `claude plugin install` answers that it "loads in place from D:\Repos\Tools\ghosthand".
+Until then the desktop app ran a copy in `~/.claude/plugins/cache/ghosthand/ghosthand/<version>`.
+So:
 
 1. Change the code, run `cd desktop && uv run pytest` (add `-m real` for the live checks).
 2. Bump `version` in `.claude-plugin/plugin.json` and commit.
-3. `claude plugin install ghosthand@ghosthand`, then start a new session.
+3. `claude plugin update ghosthand@ghosthand` records the new version; start a new session (or
+   `/reload-plugins`) to load it.
 
-Reinstalling the *same* version fails while any open session still runs the old copy, which is
-why the version goes up. If `uv run` says it cannot remove `ghosthand.exe`, another session's
+A session already running keeps the servers it started with. If `uv run` says it cannot remove `ghosthand.exe`, another session's
 server is using this folder's venv; run tests with `uv run --no-sync pytest` instead.
 
 Do not add `--no-dev` to the server command (this folder's venv would lose pytest), and keep the
